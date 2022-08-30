@@ -2,12 +2,15 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\api\v1\CustomerController;
 use App\Http\Controllers\api\v1\UserController;
 use App\Http\Controllers\api\v1\AuthController;
-use App\Http\Controllers\api\v1\ProfileController;
-use App\Http\Controllers\api\v1\RoleController;
-use App\Http\Controllers\api\v1\PermissionController;
+use App\Http\Controllers\CentralController;
+use App\Http\Controllers\StoreController;
+use App\Http\Controllers\TagController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\StockController;
+use App\Http\Controllers\OutOfServiceController;
+use App\Http\Controllers\BookingController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -19,50 +22,61 @@ use App\Http\Controllers\api\v1\PermissionController;
 |
 */
 
-Route::group(['prefix' => 'v1'], function(){
+Route::post('/create_test_timestamp', [ItemController::class, 'test_timestamp']);
+
+Route::group(['prefix' => 'central'], function () {
+    Route::post('/create', [CentralController::class, 'store']);
+    Route::get('/', [CentralController::class, 'show']);
+    Route::post('/test', [CentralController::class, 'test']);
+});
+
+Route::group(['middleware' => ['manage']], function () {
     //user authentication
-    Route::group(['prefix' => 'auth'], function(){
-       Route::post('/register',[AuthController::class,'register']);
-       Route::post('/login',[AuthController::class,'login']);
-       Route::group(['middleware' => 'auth:sanctum'], function(){
-            Route::post('/logout',[AuthController::class,'logout']);
-       });
+    Route::group(['prefix' => 'auth'], function () {
+        Route::post('/register', [AuthController::class, 'register']);
+        Route::post('/login', [AuthController::class, 'login']);
+        Route::group(['middleware' => ['authenticateSanctum']], function () {
+            Route::post('/logout', [AuthController::class, 'logout']);
+        });
     });
 
-    Route::group(['middleware' => 'auth:sanctum'], function(){
-        //customer management (both a user and an admin can manage customers )
-        Route::group(['prefix' => 'customers','middleware' => ['role:user|admin']], function(){
-            //Route::resource('customers',CustomerController::class);
-            Route::get('/',[CustomerController::class,'index']);
-            Route::get('/{id}/details',[CustomerController::class,'show']);
-            Route::post('/create',[CustomerController::class,'store']);
-            Route::patch('/{id}/update',[CustomerController::class,'update']);
-            Route::delete('/{id}/delete',[CustomerController::class,'destroy']);
+    Route::group(['middleware' => ['authenticateSanctum']], function () {
+
+        Route::group(['middleware' => ['isOwner']], function () {
+            Route::patch('store/update_store', [StoreController::class, 'update']);
+            Route::get('user/get_all', [UserController::class, 'show_all']);
+            Route::post('user/assign_staff', [UserController::class, 'assign_staff']);
         });
-        //user management (Only admin can perform user management actions)
-        Route::group(['prefix' => 'users','middleware' => ['role:admin']], function(){
-            Route::get('/',[UserController::class,'index']);
-            Route::get('/{id}/details',[UserController::class,'show']);
-            Route::post('/create',[UserController::class,'store']);
-            Route::patch('/{id}/update',[UserController::class,'update']);
-            Route::delete('/{id}/delete',[UserController::class,'destroy']);
-            Route::get('/{id}/roles',[UserController::class,'roles']);
-            Route::post('/{id}/assign-roles',[UserController::class,'assignRoles']);
-            Route::post('/{id}/revoke-roles',[UserController::class,'revokeRoles']);
-            //Admin status(make a user an admin if not already
-            Route::group(['prefix' => 'status'], function(){
-                Route::post('/{id}/admin',[UserController::class,'makeAdmin']);
+
+        Route::group(['middleware' => ['isStaff']], function () {
+            Route::group(['prefix' => 'tag'], function () {
+                Route::post('create_tag', [TagController::class, 'store']);
+                Route::patch('update_tag', [TagController::class, 'update']);
             });
+            Route::group(['prefix' => 'item'], function () {
+                Route::patch('/update_item', [ItemController::class, 'update']);
+                Route::post('/create_item', [ItemController::class, 'store']);
+            });
+            Route::group(['prefix' => 'out_of_service'], function () {
+                Route::post('/add_item', [OutOfServiceController::class, 'store']);
+                Route::get('/get_all', [OutOfServiceController::class, 'show']);
+                Route::patch('/update', [OutOfServiceController::class, 'update']);
+            });
+            Route::post('stock/add_item_to_stock', [StockController::class, 'store']);
         });
-        //user profile management
-        Route::group(['prefix' => 'user/profile', 'middleware' => ['role:user|admin']], function(){
-            Route::get('/',[ProfileController::class,'profile']);
-            Route::patch('/update',[ProfileController::class,'update']);
-        });
-        //Roles and Permissions(Only admin can manage roles and permissions)
-        Route::group(['middleware' => ['role:admin']], function(){
-            Route::resource('roles',RoleController::class);
-            Route::resource('permissions', PermissionController::class);
+
+        Route::group(['middleware' => ['isCustomer']], function () {
+            Route::get('user/get_current', [UserController::class, 'show_current']);
+            Route::get('store/get_store', [StoreController::class, 'show']);
+            Route::get('tag/get_tags', [TagController::class, 'show']);
+            Route::get('item/get_items', [ItemController::class, 'show']);
+            Route::group(['prefix' => 'booking'], function () {
+                Route::post('/create_booking', [BookingController::class, 'store']);
+                Route::get('/get_bookings', [BookingController::class, 'show']);
+                Route::patch('/update_booking', [BookingController::class, 'update_booking']);
+                Route::post('/add_items', [BookingController::class, 'add_items']);
+                Route::patch('/update_items', [BookingController::class, 'update_bookingitems']);
+            });
         });
     });
 });

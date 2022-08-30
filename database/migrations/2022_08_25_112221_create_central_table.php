@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddSoftDeletesToUsersTable extends Migration
+class CreateCentralTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,11 @@ class AddSoftDeletesToUsersTable extends Migration
      */
     public function up()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->softDeletesTz();
+        Schema::create('central', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->nullable();
+            $table->string('api_key')->nullable();;
+            $table->timestamps();
         });
     }
 
@@ -25,8 +28,6 @@ class AddSoftDeletesToUsersTable extends Migration
      */
     public function down()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropSoftDeletesTz();
-        });
+        Schema::dropIfExists('central');
     }
 }

@@ -20,6 +20,9 @@ use Illuminate\Support\Facades\Validator;
 use Psy\Util\Json;
 use Spatie\Permission\Models\Role;
 use Symfony\Component\HttpFoundation\Response;
+use App\Models\Central;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 /**
  * User Management
@@ -38,17 +41,17 @@ class UserController extends Controller
      */
     public function index(): JsonResponse
     {
-        try{
-            $users = User::with('customers','roles')->latest()->paginate(10);
-            if($users->isEmpty()){
-                return $this->commonResponse(false,'Users Not Found','',Response::HTTP_NOT_FOUND);
+        try {
+            $users = User::with('customers', 'roles')->latest()->paginate(10);
+            if ($users->isEmpty()) {
+                return $this->commonResponse(false, 'Users Not Found', '', Response::HTTP_NOT_FOUND);
             }
-            return $this->commonResponse(true,'Users List', UserResource::collection($users)->response()->getData(true),Response::HTTP_OK);
-        }catch (QueryException $exception){
-            return $this->commonResponse(false,$exception->errorInfo[2],'',Response::HTTP_UNPROCESSABLE_ENTITY);
-        }catch (Exception $exception){
-            Log::critical('Failed to fetch user data. ERROR: '.$exception->getTraceAsString());
-            return $this->commonResponse(false,$exception->getMessage(),'',Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->commonResponse(true, 'Users List', UserResource::collection($users)->response()->getData(true), Response::HTTP_OK);
+        } catch (QueryException $exception) {
+            return $this->commonResponse(false, $exception->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical('Failed to fetch user data. ERROR: ' . $exception->getTraceAsString());
+            return $this->commonResponse(false, $exception->getMessage(), '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -66,25 +69,25 @@ class UserController extends Controller
     public function store(UserRequest $request): JsonResponse
     {
         $validator = Validator::make($request->all(), $request->rules(), $request->messages());
-        if($validator->fails()){
-            return $this->commonResponse(false,Arr::flatten($validator->messages()->get('*')),'',Response::HTTP_UNPROCESSABLE_ENTITY);
+        if ($validator->fails()) {
+            return $this->commonResponse(false, Arr::flatten($validator->messages()->get('*')), '', Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        try{
+        try {
             $newUser = User::create(array_merge(
                 $request->validated(),
                 ['password' => Hash::make($request->password)]
             ));
-            if($newUser){
+            if ($newUser) {
                 //TODO send the new user an invitation to set their reset their password
                 UserCreated::dispatch($newUser); //assign the user a user role
-                return $this->commonResponse(true,'User Created successfully',new UserResource($newUser), Response::HTTP_CREATED);
+                return $this->commonResponse(true, 'User Created successfully', new UserResource($newUser), Response::HTTP_CREATED);
             }
-            return $this->commonResponse(false,'Failed to create user','',Response::HTTP_EXPECTATION_FAILED);
-        }catch (QueryException $exception){
-            return $this->commonResponse(false,$exception->errorInfo[2],'',Response::HTTP_UNPROCESSABLE_ENTITY);
-        }catch (Exception $exception){
-            Log::critical('Could not create new user account. ERROR: '.$exception->getTraceAsString());
-            return $this->commonResponse(false,$exception->getMessage(),'',Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->commonResponse(false, 'Failed to create user', '', Response::HTTP_EXPECTATION_FAILED);
+        } catch (QueryException $exception) {
+            return $this->commonResponse(false, $exception->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical('Could not create new user account. ERROR: ' . $exception->getTraceAsString());
+            return $this->commonResponse(false, $exception->getMessage(), '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -98,17 +101,17 @@ class UserController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        try{
-            $user = User::with('customers','roles')->find($id);
-            if(!$user){
-                return $this->commonResponse(false,'User Not Found','',Response::HTTP_NOT_FOUND);
+        try {
+            $user = User::with('customers', 'roles')->find($id);
+            if (!$user) {
+                return $this->commonResponse(false, 'User Not Found', '', Response::HTTP_NOT_FOUND);
             }
-            return $this->commonResponse(true,'User Details',new UserResource($user),Response::HTTP_OK);
-        }catch (QueryException $exception){
-            return $this->commonResponse(false,$exception->errorInfo[2],'',Response::HTTP_UNPROCESSABLE_ENTITY);
-        }catch (Exception $exception){
-            Log::critical('Could not fetch user details. ERROR: '.$exception->getTraceAsString());
-            return $this->commonResponse(false,$exception->getMessage(),'',Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->commonResponse(true, 'User Details', new UserResource($user), Response::HTTP_OK);
+        } catch (QueryException $exception) {
+            return $this->commonResponse(false, $exception->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical('Could not fetch user details. ERROR: ' . $exception->getTraceAsString());
+            return $this->commonResponse(false, $exception->getMessage(), '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -126,23 +129,23 @@ class UserController extends Controller
     public function update(UserUpdateRequest $request, int $id): JsonResponse
     {
         $validator = Validator::make($request->all(), $request->rules());
-        if($validator->fails()){
-            return $this->commonResponse(false,Arr::flatten($validator->messages()->get('*')),'',Response::HTTP_UNPROCESSABLE_ENTITY);
+        if ($validator->fails()) {
+            return $this->commonResponse(false, Arr::flatten($validator->messages()->get('*')), '', Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        try{
-            $user = User::with('customers','roles')->find($id);
-            if(!$user){
-                return $this->commonResponse(false,'User Not Found','',Response::HTTP_NOT_FOUND);
+        try {
+            $user = User::with('customers', 'roles')->find($id);
+            if (!$user) {
+                return $this->commonResponse(false, 'User Not Found', '', Response::HTTP_NOT_FOUND);
             }
-            if($user->update($request->validated())){
-                return $this->commonResponse(true,'User Details Updated Successfully', new UserResource($user),Response::HTTP_OK);
+            if ($user->update($request->validated())) {
+                return $this->commonResponse(true, 'User Details Updated Successfully', new UserResource($user), Response::HTTP_OK);
             }
-            return $this->commonResponse(false,'Failed to update user details','',Response::HTTP_EXPECTATION_FAILED);
-        }catch (QueryException $queryException){
-            return $this->commonResponse(false,$queryException->errorInfo[2],'',Response::HTTP_UNPROCESSABLE_ENTITY);
-        }catch (Exception $exception){
-            Log::critical('Could not update user details. ERROR: '.$exception->getTraceAsString());
-            return $this->commonResponse(false,$exception->getMessage(),'',Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->commonResponse(false, 'Failed to update user details', '', Response::HTTP_EXPECTATION_FAILED);
+        } catch (QueryException $queryException) {
+            return $this->commonResponse(false, $queryException->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical('Could not update user details. ERROR: ' . $exception->getTraceAsString());
+            return $this->commonResponse(false, $exception->getMessage(), '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -156,20 +159,20 @@ class UserController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        try{
-            $user = User::with('customers','roles')->find($id);
-            if(!$user){
-                return $this->commonResponse(false,'User Not Found','', Response::HTTP_NOT_FOUND);
+        try {
+            $user = User::with('customers', 'roles')->find($id);
+            if (!$user) {
+                return $this->commonResponse(false, 'User Not Found', '', Response::HTTP_NOT_FOUND);
             }
-            if($user->delete()){
-                return $this->commonResponse(true,'User Deleted Successfully','',Response::HTTP_OK);
+            if ($user->delete()) {
+                return $this->commonResponse(true, 'User Deleted Successfully', '', Response::HTTP_OK);
             }
-            return $this->commonResponse(false,'Failed to delete user','',Response::HTTP_EXPECTATION_FAILED);
-        }catch (QueryException $queryException){
-            return $this->commonResponse(false,$queryException->errorInfo[2],'',Response::HTTP_UNPROCESSABLE_ENTITY);
-        }catch (Exception $exception){
-            Log::critical('Could not delete user. ERROR: '.$exception->getTraceAsString());
-            return $this->commonResponse(false,$exception->getMessage(),'',Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->commonResponse(false, 'Failed to delete user', '', Response::HTTP_EXPECTATION_FAILED);
+        } catch (QueryException $queryException) {
+            return $this->commonResponse(false, $queryException->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical('Could not delete user. ERROR: ' . $exception->getTraceAsString());
+            return $this->commonResponse(false, $exception->getMessage(), '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -182,25 +185,25 @@ class UserController extends Controller
      */
     public function makeAdmin(int $id): JsonResponse
     {
-        try{
-            $user = User::with('customers','roles')->find($id);
-            if(!$user){
-                return $this->commonResponse(false,'User Not Found','', Response::HTTP_NOT_FOUND);
+        try {
+            $user = User::with('customers', 'roles')->find($id);
+            if (!$user) {
+                return $this->commonResponse(false, 'User Not Found', '', Response::HTTP_NOT_FOUND);
             }
-            $adminRole = Role::findOrCreate('admin','api');
-            $userRole  = Role::findOrCreate('user','api');
-            if($user->hasRole($adminRole)){
-                return $this->commonResponse(false,'This user has an admin status already','', Response::HTTP_UNPROCESSABLE_ENTITY);
+            $adminRole = Role::findOrCreate('admin', 'api');
+            $userRole  = Role::findOrCreate('user', 'api');
+            if ($user->hasRole($adminRole)) {
+                return $this->commonResponse(false, 'This user has an admin status already', '', Response::HTTP_UNPROCESSABLE_ENTITY);
             }
-            if($user->assignRole($adminRole)){
-                return $this->commonResponse(true,'User admin status changed successfully', '', Response::HTTP_OK);
+            if ($user->assignRole($adminRole)) {
+                return $this->commonResponse(true, 'User admin status changed successfully', '', Response::HTTP_OK);
             }
-            return $this->commonResponse(false,'Failed to change admin status','', Response::HTTP_EXPECTATION_FAILED);
-        }catch (QueryException $queryException){
-            return $this->commonResponse(false,$queryException->errorInfo[2],'',Response::HTTP_UNPROCESSABLE_ENTITY);
-        }catch (Exception $exception){
-            Log::critical('Could not change user to admin status. ERROR: '.$exception->getTraceAsString());
-            return $this->commonResponse(false,$exception->getMessage(),'',Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->commonResponse(false, 'Failed to change admin status', '', Response::HTTP_EXPECTATION_FAILED);
+        } catch (QueryException $queryException) {
+            return $this->commonResponse(false, $queryException->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical('Could not change user to admin status. ERROR: ' . $exception->getTraceAsString());
+            return $this->commonResponse(false, $exception->getMessage(), '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -211,20 +214,20 @@ class UserController extends Controller
      * @urlParam id integer The User ID
      * @authenticated
      */
-    public function roles( int $id ): JsonResponse
+    public function roles(int $id): JsonResponse
     {
-        try{
-            $user = User::with('customers','roles')->find($id);
-            if(!$user){
-                return $this->commonResponse(false,'User Not Found','', Response::HTTP_NOT_FOUND);
+        try {
+            $user = User::with('customers', 'roles')->find($id);
+            if (!$user) {
+                return $this->commonResponse(false, 'User Not Found', '', Response::HTTP_NOT_FOUND);
             }
             $UserRoles = $user->roles()->latest()->paginate(10);
-            return $this->commonResponse(true,'Assigned Roles',RoleResource::collection($UserRoles)->response()->getData(true), Response::HTTP_OK);;
-        }catch (QueryException $queryException){
-            return $this->commonResponse(false,$queryException->errorInfo[2],'',Response::HTTP_UNPROCESSABLE_ENTITY);
-        }catch (Exception $exception){
-            Log::critical('Could not fetch user roles. ERROR: '.$exception->getTraceAsString());
-            return $this->commonResponse(false,$exception->getMessage(),'',Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->commonResponse(true, 'Assigned Roles', RoleResource::collection($UserRoles)->response()->getData(true), Response::HTTP_OK);;
+        } catch (QueryException $queryException) {
+            return $this->commonResponse(false, $queryException->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical('Could not fetch user roles. ERROR: ' . $exception->getTraceAsString());
+            return $this->commonResponse(false, $exception->getMessage(), '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -237,37 +240,37 @@ class UserController extends Controller
      * @return JsonResponse
      * @authenticated
      */
-    public function assignRoles( Request $request, int $id ): JsonResponse
+    public function assignRoles(Request $request, int $id): JsonResponse
     {
-        $validator = Validator::make($request->all(),['role_id.*' => 'required|integer']); //exists:roles,id
-        if($validator->fails()){
-            return $this->commonResponse(false,Arr::flatten($validator->messages()->get('*')),'',Response::HTTP_UNPROCESSABLE_ENTITY);
+        $validator = Validator::make($request->all(), ['role_id.*' => 'required|integer']); //exists:roles,id
+        if ($validator->fails()) {
+            return $this->commonResponse(false, Arr::flatten($validator->messages()->get('*')), '', Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        try{
-            $user = User::with('customers','roles')->find($id);
-            if(!$user){
-                return $this->commonResponse(false,'User Not Found','', Response::HTTP_NOT_FOUND);
+        try {
+            $user = User::with('customers', 'roles')->find($id);
+            if (!$user) {
+                return $this->commonResponse(false, 'User Not Found', '', Response::HTTP_NOT_FOUND);
             }
             //check for role by id
-            $role = Role::findById((int)$request->role_id,'api');
-            if(!$role){
-                return $this->commonResponse(false,'Role Not Found','',Response::HTTP_NOT_FOUND);
+            $role = Role::findById((int)$request->role_id, 'api');
+            if (!$role) {
+                return $this->commonResponse(false, 'Role Not Found', '', Response::HTTP_NOT_FOUND);
             }
             $roleIds = explode(',', $request->role_id);
-            if(count($roleIds) > 1){
+            if (count($roleIds) > 1) {
                 return $this->assignMultipleRoles($request, $user);
             }
-            if($user->hasRole($role->name)){
-                return $this->commonResponse(false,'User Has '.$role->name.' role already','',Response::HTTP_UNPROCESSABLE_ENTITY);
+            if ($user->hasRole($role->name)) {
+                return $this->commonResponse(false, 'User Has ' . $role->name . ' role already', '', Response::HTTP_UNPROCESSABLE_ENTITY);
             }
             $user->assignRole($role);
             $assignedRoles = $user->roles()->latest()->paginate(10);
-            return $this->commonResponse(false,'User Assigned '.$role->name.' successfully', RoleResource::collection($assignedRoles), Response::HTTP_OK);;
-        }catch (QueryException $queryException){
-            return $this->commonResponse(false,$queryException->errorInfo[2],'',Response::HTTP_UNPROCESSABLE_ENTITY);
-        }catch (Exception $exception){
-            Log::critical('Failed to assign roles. ERROR: '.$exception->getTraceAsString());
-            return $this->commonResponse(false,$exception->getMessage(),'',Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->commonResponse(false, 'User Assigned ' . $role->name . ' successfully', RoleResource::collection($assignedRoles), Response::HTTP_OK);;
+        } catch (QueryException $queryException) {
+            return $this->commonResponse(false, $queryException->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical('Failed to assign roles. ERROR: ' . $exception->getTraceAsString());
+            return $this->commonResponse(false, $exception->getMessage(), '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -283,34 +286,34 @@ class UserController extends Controller
     public function revokeRoles(Request $request, int $id): JsonResponse
     {
         $validator = Validator::make($request->all(), ['role_id.*' => 'required|integer|exists:roles,id']);
-        if($validator->fails()){
-            return $this->commonResponse(false, Arr::flatten($validator->messages()->get('*')),'', Response::HTTP_UNPROCESSABLE_ENTITY);
+        if ($validator->fails()) {
+            return $this->commonResponse(false, Arr::flatten($validator->messages()->get('*')), '', Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        try{
-            $user = User::with('customers','roles')->find($id);
-            if(!$user){
-                return $this->commonResponse(false,'User Not Found','', Response::HTTP_NOT_FOUND);
+        try {
+            $user = User::with('customers', 'roles')->find($id);
+            if (!$user) {
+                return $this->commonResponse(false, 'User Not Found', '', Response::HTTP_NOT_FOUND);
             }
             $roleIds = explode(',', $request->role_id);
-            if(count($roleIds) > 1){
+            if (count($roleIds) > 1) {
                 return $this->revokeMultipleRoles($request, $user);
             }
-            $role = Role::findById((int)$request->role_id,'api');
-            if(!$role){
-                return $this->commonResponse(false,'Role Not Found','', Response::HTTP_NOT_FOUND);
+            $role = Role::findById((int)$request->role_id, 'api');
+            if (!$role) {
+                return $this->commonResponse(false, 'Role Not Found', '', Response::HTTP_NOT_FOUND);
             }
-            if(!$user->hasRole($role)){
-                return $this->commonResponse(false,'User has no '.$role->name.' role','',Response::HTTP_UNPROCESSABLE_ENTITY);
+            if (!$user->hasRole($role)) {
+                return $this->commonResponse(false, 'User has no ' . $role->name . ' role', '', Response::HTTP_UNPROCESSABLE_ENTITY);
             }
-            if($user->removeRole($role)){
-                return $this->commonResponse(true,'Role revoked successfully','', Response::HTTP_OK);
+            if ($user->removeRole($role)) {
+                return $this->commonResponse(true, 'Role revoked successfully', '', Response::HTTP_OK);
             }
-            return $this->commonResponse(false,'Could Not Revoke Role, please try again','', Response::HTTP_EXPECTATION_FAILED);
-        }catch (QueryException $queryException){
-            return $this->commonResponse(false, $queryException->errorInfo[2],'', Response::HTTP_UNPROCESSABLE_ENTITY);
-        }catch (Exception $exception){
-            Log::critical('Could not revoke user role. ERROR: '. $exception->getTraceAsString());
-            return $this->commonResponse(false,$exception->getMessage(),'', Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->commonResponse(false, 'Could Not Revoke Role, please try again', '', Response::HTTP_EXPECTATION_FAILED);
+        } catch (QueryException $queryException) {
+            return $this->commonResponse(false, $queryException->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical('Could not revoke user role. ERROR: ' . $exception->getTraceAsString());
+            return $this->commonResponse(false, $exception->getMessage(), '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -322,15 +325,15 @@ class UserController extends Controller
     private function assignMultipleRoles(Request $request, $user): JsonResponse
     {
         $roleIds = explode(',', $request->role_id);
-        $userRoles = Role::whereIn('id',$roleIds)->get();
-        if($user->hasAnyRole($userRoles)){
-            foreach($userRoles as $role){
-                return $this->commonResponse(false,$role->name.' already assigned to user','', Response::HTTP_UNPROCESSABLE_ENTITY);
+        $userRoles = Role::whereIn('id', $roleIds)->get();
+        if ($user->hasAnyRole($userRoles)) {
+            foreach ($userRoles as $role) {
+                return $this->commonResponse(false, $role->name . ' already assigned to user', '', Response::HTTP_UNPROCESSABLE_ENTITY);
             }
         }
         $user->assignRole($userRoles);
         $roles = $user->roles()->latest()->paginate(10);
-        return $this->commonResponse(true,'Roles Assigned Successfully to user', RoleResource::collection($roles)->response()->getData(true),Response::HTTP_OK);
+        return $this->commonResponse(true, 'Roles Assigned Successfully to user', RoleResource::collection($roles)->response()->getData(true), Response::HTTP_OK);
     }
 
     /**
@@ -342,23 +345,83 @@ class UserController extends Controller
     private function revokeMultipleRoles(Request $request, $user): JsonResponse
     {
         $roleIds = explode(',', $request->role_id);
-        try{
-            $roles = Role::whereIn('id',$roleIds)->get();
-            foreach($roles as $role){
-                if(!$user->hasRole($role)) {
-                    return $this->commonResponse(false,'User has no '.$role->name.' role','', Response::HTTP_UNPROCESSABLE_ENTITY);
+        try {
+            $roles = Role::whereIn('id', $roleIds)->get();
+            foreach ($roles as $role) {
+                if (!$user->hasRole($role)) {
+                    return $this->commonResponse(false, 'User has no ' . $role->name . ' role', '', Response::HTTP_UNPROCESSABLE_ENTITY);
                 }
-                if($user->removeRole($role)){
+                if ($user->removeRole($role)) {
                     $userRoles = $user->roles()->latest()->paginate(10);
-                    return $this->commonResponse(true,'Roles revoked successfully',RoleResource::collection($userRoles)->response()->getData(true), Response::HTTP_OK);
+                    return $this->commonResponse(true, 'Roles revoked successfully', RoleResource::collection($userRoles)->response()->getData(true), Response::HTTP_OK);
                 }
             }
-            return $this->commonResponse(false,'Failed To Revoke Roles','', Response::HTTP_EXPECTATION_FAILED);
-        }catch (QueryException $queryException){
-            return $this->commonResponse(false, $queryException->errorInfo[2],'', Response::HTTP_UNPROCESSABLE_ENTITY);
-        }catch (Exception $exception){
-            Log::critical('Failed to revoke multiple roles: ERROR: '.$exception->getTraceAsString());
-            return $this->commonResponse(false,$exception->getMessage(),'', Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->commonResponse(false, 'Failed To Revoke Roles', '', Response::HTTP_EXPECTATION_FAILED);
+        } catch (QueryException $queryException) {
+            return $this->commonResponse(false, $queryException->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical('Failed to revoke multiple roles: ERROR: ' . $exception->getTraceAsString());
+            return $this->commonResponse(false, $exception->getMessage(), '', Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function assign_staff(Request $request)
+    {
+        try {
+
+            $request->validate([
+                'user_id' => 'required|integer',
+            ]);
+            $user = User::with('customers', 'roles')->find($request->user_id);
+            if (!$user) {
+                return $this->authResponse(404, 'not found', Response::HTTP_NOT_FOUND);
+            }
+            foreach ($user['roles'] as $value) {
+                if ($value->name == 'staff') {
+                    return $this->authResponse(201, 'คนนนี้เป็น staff อยู่แล้ว', Response::HTTP_NOT_FOUND); //แก้
+                    break;
+                }
+            }
+            $user->assignRole(Role::find(2));
+            return $this->authResponse(201, 'success', Response::HTTP_OK);
+        } catch (QueryException $exception) {
+            return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'user', '', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical(': ' . $exception->getTraceAsString());
+            return $this->bookingResponse(500, (string) $exception->getMessage(), 'user', '', Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function show_all()
+    {
+        try {
+
+            $user = User::all();
+            if (!$user) {
+                return $this->authResponse(404, 'not found', Response::HTTP_NOT_FOUND);
+            }
+            return $this->bookingResponse(201, 'success', 'user', $user, Response::HTTP_OK);
+        } catch (QueryException $exception) {
+            return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'user', '', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical(': ' . $exception->getTraceAsString());
+            return $this->bookingResponse(500, (string) $exception->getMessage(), 'user', '', Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function show_current()
+    {
+        try {
+            $user = User::with('customers', 'roles')->find(Auth::user()->id);
+            if (!$user) {
+                return $this->authResponse(404, 'not found', Response::HTTP_NOT_FOUND);
+            }
+            return $this->bookingResponse(201, 'success', 'user', $user, Response::HTTP_OK);
+        } catch (QueryException $exception) {
+            return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'user', '', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical(': ' . $exception->getTraceAsString());
+            return $this->bookingResponse(500, (string) $exception->getMessage(), 'user', '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

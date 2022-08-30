@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CentralController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,4 +14,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::view('/','welcome')->name('welcome');
+Route::view('/', 'welcome')->name('welcome');
+Route::get('/home', function () {
+    return view('home')->with('response');
+})->name('home');
+Route::post('/signin', [CentralController::class, 'signin'])->name('sign.in');

@@ -22,4 +22,31 @@ trait CommonApiResponse
             'result'    => $data
         ], $code);
     }
+
+    public function bookingResponse(int $code, string $message, string $dataName, $data, int $status): JsonResponse
+    {
+        return response()->json([
+            'response' => [
+                'code' => [
+                    'key' => $code,
+                    'message' =>  $message,
+                ],
+                $dataName => $data,
+            ],
+            'status' => $status
+        ], $status);
+    }
+
+    public function authResponse(int $code, string $message, int $status): JsonResponse
+    {
+        return response()->json([
+            'response' => [
+                'code' => [
+                    'key' => $code,
+                    'message' =>  $message,
+                ],
+            ],
+            'status' => $status
+        ], $status);
+    }
 }

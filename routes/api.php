@@ -11,6 +11,8 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\OutOfServiceController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\FilterController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -22,7 +24,6 @@ use App\Http\Controllers\BookingController;
 |
 */
 
-Route::post('/create_test_timestamp', [ItemController::class, 'test_timestamp']);
 
 Route::group(['prefix' => 'central'], function () {
     Route::post('/create', [CentralController::class, 'store']);
@@ -31,6 +32,8 @@ Route::group(['prefix' => 'central'], function () {
 });
 
 Route::group(['middleware' => ['manage']], function () {
+    Route::get('/search_item', [FilterController::class, 'item_filter']);
+    Route::get('/search_booking', [FilterController::class, 'booking_filter']);
     //user authentication
     Route::group(['prefix' => 'auth'], function () {
         Route::post('/register', [AuthController::class, 'register']);
@@ -63,6 +66,7 @@ Route::group(['middleware' => ['manage']], function () {
                 Route::patch('/update', [OutOfServiceController::class, 'update']);
             });
             Route::post('stock/add_item_to_stock', [StockController::class, 'store']);
+            Route::patch('booking/update_items_by_staff', [BookingController::class, 'update_items_by_staff']);
         });
 
         Route::group(['middleware' => ['isCustomer']], function () {
@@ -75,7 +79,7 @@ Route::group(['middleware' => ['manage']], function () {
                 Route::get('/get_bookings', [BookingController::class, 'show']);
                 Route::patch('/update_booking', [BookingController::class, 'update_booking']);
                 Route::post('/add_items', [BookingController::class, 'add_items']);
-                Route::patch('/update_items', [BookingController::class, 'update_bookingitems']);
+                Route::patch('/update_items_by_customer', [BookingController::class, 'update_items_by_customer']);
             });
         });
     });

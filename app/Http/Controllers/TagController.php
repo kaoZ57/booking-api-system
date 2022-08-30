@@ -12,6 +12,7 @@ use App\Http\Controllers\AccessController;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 use Exception;
+use Carbon\Carbon;
 
 class TagController extends Controller
 {
@@ -42,8 +43,15 @@ class TagController extends Controller
     {
         try {
 
-            $tags = Tag::all();
-            return $this->bookingResponse(201, "show successfully", 'tag', $tags, Response::HTTP_OK);
+            $tags = Tag::where('created_at', '<', Carbon::now()->setTimezone('Asia/Bangkok'));
+            if ($request->has('tag_id')) {
+                $tags->where('id', "=", $request->tag_id);
+            }
+            if ($request->has('name')) {
+                $tags->where('name', "like", "%{$request->name}%");
+            }
+
+            return $this->bookingResponse(201, "show successfully", 'tag', $tags->get(), Response::HTTP_OK);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'tag', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {

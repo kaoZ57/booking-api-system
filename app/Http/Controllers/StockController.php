@@ -22,12 +22,15 @@ class StockController extends Controller
             $request->validate([
                 'stock' => 'required',
             ]);
+            $item = Item::find($request->stock['item_id']);
+            if (!$item) {
+                return $this->bookingResponse(404, 'ไม่เจอ', 'stock', '',  Response::HTTP_NOT_FOUND); //แก้
+            }
 
             $stock = Stock::create([
                 'item_id' => $request->stock['item_id'],
                 'amount' => $request->stock['amount'],
             ]);
-
             $item = Item::find($stock['item_id']);
             $item->update([
                 'amount' => $item['amount'] + $stock['amount'],

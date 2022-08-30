@@ -16,6 +16,8 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Status;
+use App\Models\User;
+use PhpParser\Node\Stmt\Foreach_;
 
 class BookingController extends Controller
 {
@@ -57,6 +59,7 @@ class BookingController extends Controller
                 'start_date' => $request->booking['start_date'],
                 'end_date' => $request->booking['end_date'],
                 'verify_date' => null,
+
             ]);
 
             $booking_itemArr = array();
@@ -98,26 +101,54 @@ class BookingController extends Controller
     {
         try {
 
-            $booking = Booking::all();
+            $booking = Booking::where('created_at', '<', Carbon::now()->setTimezone('Asia/Bangkok'));
+            if ($request->has('users_id')) {
+                $booking->where('users_id', "=", $request->users_id);
+            }
+            if ($request->has('booking_id')) {
+                $booking->where('id', "=", $request->booking_id);
+            }
 
-            $bookingArr = array();
+            $response = array();
 
-            foreach ($booking as $value) {
+            foreach ($booking->get() as $value) {
+
                 $booking_item = Booking_Item::where("booking_id", "=", $value['id'])->get();
+                $booking_itemArr = array();
+                foreach ($booking_item as $value1) {
+                    $booking_itemResponse = ([
+                        'id' => $value1['id'],
+                        'booking_id' => $value1['booking_id'],
+                        'item_id' => $value1['item_id'],
+                        'status_id' => $value1['status_id'],
+                        'status' =>  substr(Status::find($value1['status_id'])->name, 4),
+                        'note_user' => $value1['note_user'],
+                        'note_owner' => $value1['note_owner'],
+                        'amount' => $value1['amount'],
+                        'updated_by' => $value1['updated_by'],
+                        'return_date' => $value1['return_date'],
+                        'created_at' => $value1['created_at'],
+                        'updated_at' => $value1['updated_at'],
+                    ]);
+                    array_push($booking_itemArr, $booking_itemResponse);
+                }
 
-                $response = ([
+                $bookingArr = ([
                     'id' => $value['id'],
                     'users_id' => $value['users_id'],
                     'store_id' => $value['store_id'],
                     'status_id' => $value['status_id'],
+                    'status' =>  substr(Status::find($value['status_id'])->name, 4),
                     'start_date' => $value['start_date'],
                     'end_date' => $value['end_date'],
                     'verify_date' => $value['verify_date'],
-                    'booking_item' => $booking_item,
+                    'created_at' => $value['created_at'],
+                    'updated_at' => $value['updated_at'],
+                    'booking_item' => $booking_itemArr,
                 ]);
-                array_push($bookingArr, $response);
+                array_push($response, $bookingArr);
             }
-            return $this->bookingResponse(201, "show successfully", 'booking', $bookingArr, Response::HTTP_OK);
+            return $this->bookingResponse(201, "show successfully", 'booking', $response, Response::HTTP_OK);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'booking', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
@@ -138,14 +169,14 @@ class BookingController extends Controller
             if (!$booking) {
                 return $this->bookingResponse(404, 'ไม่มีรายการจอง', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
             }
-            if ($booking->status_id > 1) {
+            if ($booking->status_id != 1) {
                 return $this->bookingResponse(404, 'แก้ไม่ได้สถานะรอการอนุมัต', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
             }
             if ($request->booking['start_date'] <  Carbon::now()->setTimezone('Asia/Bangkok') || $request->booking['end_date'] <  Carbon::now()->setTimezone('Asia/Bangkok') || $request->booking['start_date'] > $request->booking['end_date']) {
                 return $this->bookingResponse(404, 'คุณจองของเวลาผิด', 'booking', '',  Response::HTTP_NOT_FOUND); //แก้
             }
-            if ($request->booking['users_id'] != Auth::user()->id) {
-                return $this->bookingResponse(404, 'not found', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
+            if ($booking['users_id'] != Auth::user()->id) {
+                return $this->bookingResponse(404, 'คุณไม่ใช่เจ้าของ', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
             }
             if ($request->booking['status_id'] < 1 || $request->booking['status_id'] > 2) {
                 return $this->bookingResponse(404, 'status ไม่ถูกต้อง', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
@@ -188,6 +219,12 @@ class BookingController extends Controller
                 if ($booking['users_id'] != Auth::user()->id) {
                     return $this->bookingResponse(404, 'คุณไม่ใช่เจ้าของใบจอง', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
                 }
+                if ($booking['status_id'] != 1) {
+                    return $this->bookingResponse(404, 'แก้ไม่ได้สถานะรอการอนุมัต', 'booking', '',  Response::HTTP_NOT_FOUND); //แก้
+                }
+                if ($booking['status_id'] < 1 || $booking['status_id'] > 2) {
+                    return $this->bookingResponse(404, 'status ไม่ถูกต้อง', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
+                }
                 $item = Item::find($value['item_id']);
                 if (!$item) {
                     return $this->bookingResponse(404, 'ไม่มีของในระบบให้จอง', 'booking', '',  Response::HTTP_NOT_FOUND); //แก้
@@ -222,35 +259,129 @@ class BookingController extends Controller
         }
     }
 
-    public function update_bookingitems(Request $request): JsonResponse
+    public function update_items_by_customer(Request $request): JsonResponse
     {
         try {
             $request->validate([
                 'booking_item' => 'required',
             ]);
 
-            //$status = Status::where();
-            $bookingitem = Booking_Item::find($request->booking_id['booking_id']);
-            // $booking = Booking::find($request->booking['booking_id']);
-            if (!$bookingitem) {
-                return $this->bookingResponse(404, 'ไม่มีรายการจอง', 'booking_item', '', Response::HTTP_NOT_FOUND); //แก้
+            $response = array();
+
+            foreach ($request->booking_item as $value) {
+
+                $booking_item = Booking_Item::find($value['id']);
+
+                $booking = Booking::find($booking_item['booking_id']);
+                if ($booking['status_id'] == 2) {
+                    return $this->bookingResponse(404, 'คุณยืนยันการจองไปแล้ว', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
+                }
+                if (!$booking_item) {
+                    return $this->bookingResponse(404, 'ไม่มีรายการจอง', 'booking_item', '', Response::HTTP_NOT_FOUND); //แก้
+                }
+                if ($booking['users_id'] != Auth::user()->id) {
+                    return $this->bookingResponse(404, 'คุณไม่ใช่เจ้าของใบจอง', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
+                }
+
+                $booking_item->update([
+                    'note_user' => $value['note_user'],
+                    'amount' => $value['amount'],
+                ]);
+
+                array_push($response, $booking_item);
+            }
+            return $this->bookingResponse(201, 'update successfully', 'booking_item', $response, Response::HTTP_CREATED);
+        } catch (QueryException $exception) {
+            return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'booking_item', '', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical(': ' . $exception->getTraceAsString());
+            return $this->bookingResponse(500, (string) $exception->getMessage(), 'booking_item', '', Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    public function update_items_by_staff(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'booking_item' => 'required',
+            ]);
+
+            $statusBooking_item = Status::where("table_name", "=", "booking_item")->get();
+            foreach ($request->booking_item as $value) {
+                if (!$statusBooking_item->find($value['status_id'])) {
+                    return $this->bookingResponse(404, 'status ไม่ถูกต้อง', 'booking_item', '', Response::HTTP_NOT_FOUND); //แก้
+                }
             }
 
-            // if ($request->booking['start_date'] <  Carbon::now()->setTimezone('Asia/Bangkok') || $request->booking['end_date'] <  Carbon::now()->setTimezone('Asia/Bangkok') || $request->booking['start_date'] > $request->booking['end_date']) {
-            //     return $this->bookingResponse(404, 'คุณจองของเวลาผิด', 'booking', '',  Response::HTTP_NOT_FOUND); //แก้
-            // }
-            // if ($request->booking['users_id'] != Auth::user()->id) {
-            //     return $this->bookingResponse(404, 'not found', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
-            // }
+            $response = array();
+            $status = array();
 
-            $bookingitem->update([
-                'booking_id' => $request->booking['booking_id '],
-                'item_id' => $request->booking['item_id'],
-                'note_user' => $request->booking['note_user'],
-                'note_owner' => $request->booking['note_owner'],
-                'amount' => $request->item['amount'],
-            ]);
-            return $this->bookingResponse(201, 'update successfully', 'booking_item', $bookingitem, Response::HTTP_CREATED);
+            foreach ($request->booking_item as $value) {
+                $booking_item = Booking_Item::find($value['id']);
+
+                $booking = Booking::find($booking_item['booking_id']);
+                if (!$booking) {
+                    return $this->bookingResponse(404, 'ไม่มีรายการจอง', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
+                }
+                if ($booking['status_id'] == 1) {
+                    return $this->bookingResponse(404, 'เจ้าของยังไม่ได้ยืนยันการจอง', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
+                }
+                if (!$booking_item) {
+                    return $this->bookingResponse(404, 'ไม่มีรายการของที่จอง', 'booking_item', '', Response::HTTP_NOT_FOUND); //แก้
+                }
+
+                $booking_item->update([
+                    'status_id' => $value['status_id'],
+                    'note_owner' => $value['note_owner'],
+                    'updated_by' => Auth::user()->id,
+                ]);
+                array_push($response, $booking_item);
+                array_push($status, $value['status_id']);
+            }
+
+
+            foreach ($status as $value) {
+                if ($status[0] != $value) {
+                    $isStatus = false;
+                    break;
+                }
+                $isStatus = true;
+            }
+
+            if ($isStatus) {
+                if ($status[0] == 5) {
+                    $booking->update(['status_id' => 4]);
+                }
+                if ($status[0] == 6) {
+                    $booking->update(['status_id' => 2]);
+                    $booking_return = Booking_Item::where("booking_id", "=", $booking['id'])->get();
+                    foreach ($booking_return as $value) {
+                        $item_data = Item::find($value['item_id']);
+                        $amount = $item_data['amount'] - $value['amount'];
+                        if ($amount < 0) {
+                            return $this->bookingResponse(404, 'ไม่มีของให้จอง', 'booking_item', '', Response::HTTP_NOT_FOUND);
+                        }
+                        $item_data->update(['amount' => $amount]);
+                    }
+                }
+                if ($status[0] == 7) {
+                    $booking->update(['status_id' => 3, 'verify_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
+                }
+                if ($status[0] == 8) {
+                    $booking->update(['status_id' => 3]);
+                }
+                if ($status[0] == 9) {
+                    $booking->update(['status_id' => 4]);
+                    $booking_return = Booking_Item::where("booking_id", "=", $booking['id'])->get();
+                    foreach ($booking_return as $value) {
+                        $value->update(['return_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
+                    }
+                    foreach ($booking_return as $value) {
+                        $item_data = Item::find($value['item_id']);
+                        $item_data->update(['amount' => $item_data['amount'] + $value['amount']]);
+                    }
+                }
+            }
+            return $this->bookingResponse(201, 'update successfully', 'booking_item', $response, Response::HTTP_CREATED);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'booking_item', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {

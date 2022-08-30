@@ -58,7 +58,8 @@ class OutOfServiceController extends Controller
     public function show(Request $request): JsonResponse
     {
         try {
-            $out_of_service = Out_of_service::where("ready_to_use", "=", 0);
+            $out_of_service = Out_of_service::where("ready_to_use", "=", 0)->get();
+
             return $this->bookingResponse(201, "show successfully", 'out_of_service', $out_of_service, Response::HTTP_OK);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'out_of_service', '', Response::HTTP_UNPROCESSABLE_ENTITY);

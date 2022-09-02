@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use App\Models\Central;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class Manage
 {
@@ -33,6 +34,10 @@ class Manage
         DB::purge('mysql');
         DB::reconnect('mysql');
         return $next($request);
-        // return $central;
+
+        // config(['database.connections.mysql.database' => $request->header('api_key')]);
+        // DB::purge('mysql');
+        // DB::reconnect('mysql');
+        // return $next($request);
     }
 }

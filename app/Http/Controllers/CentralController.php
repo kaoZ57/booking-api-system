@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Central;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class CentralController extends Controller
 {
@@ -41,6 +42,7 @@ class CentralController extends Controller
       // return $plainTextToken;
       $central = Central::all();
       $mycentral = Central::Where('api_key', '=', hash('crc32c', $request->header('api_key')))->first();
+      // $mycentral = Central::where("api_key", "=", str_replace(' ', '', strtolower(crypt(crypt(Auth::user()->id, 'CS#13'), 'BooKinGAIpSYsIlovEPhaYUT') . crypt('API' . Auth::user()->id . 'KEY' . Auth::user()->id, 'I LoVe Xkalux') . '|table')))->first();
       $centralJson = array();
 
       foreach ($central as $value) {
@@ -79,8 +81,26 @@ class CentralController extends Controller
   }
   public function signin(Request $request)
   {
-    $response = json_decode($this->store($request)->getContent(), true);
-    return redirect()->route('home')->with('response', $response);
+    // $response = json_decode($this->store($request)->getContent(), true);
+    // return redirect()->route('home')->with('response', $response);
+    // $response = response()->json([
+    //   'id' => 1,
+    //   'name' => 'kao'
+    // ], 200);
+
+    // dd($response);
+    // dd($response);
+    // dd($request['name']);
+    $request->validate([
+      "name" =>  'required'
+    ]);
+    if (!$request) {
+      $response = "ไม่มีข้อมูล";
+      return view('home', compact('response'));
+    }
+    $response = json_decode($this->migration($request->name)->getContent());
+    $response = $response->api_key;
+    return view('home', compact('response'));
   }
   public function test()
   {

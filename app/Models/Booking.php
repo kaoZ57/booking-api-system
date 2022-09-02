@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Booking extends Model
 {
@@ -19,4 +21,10 @@ class Booking extends Model
         'end_date',
         'verify_date'
     ];
+
+    public function scopeStartsBefore(Builder $query, $date): Builder
+    {
+
+        return $query->where('end_date', '<=', Carbon::parse($date));
+    }
 }

@@ -2,22 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Booking;
-use Illuminate\Support\Facades\Auth;
-use App\Models\Item;
-use Symfony\Component\HttpFoundation\Response;
-use App\Models\Store;
-use Carbon\Carbon;
-use App\Models\Booking_Item;
-use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\Log;
 use Exception;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Validator;
-use App\Models\Status;
+use Carbon\Carbon;
+use App\Models\Item;
 use App\Models\User;
+use App\Models\Store;
+use App\Models\Status;
+use App\Models\Booking;
+use App\Models\Booking_Item;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use PhpParser\Node\Stmt\Foreach_;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\QueryException;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\Response;
 
 class BookingController extends Controller
 {
@@ -100,13 +101,33 @@ class BookingController extends Controller
     public function show(Request $request): JsonResponse
     {
         try {
-
             $booking = Booking::where('created_at', '<', Carbon::now()->setTimezone('Asia/Bangkok'));
             if ($request->has('users_id')) {
                 $booking->where('users_id', "=", $request->users_id);
             }
+            if ($request->has('start_date')) {
+                $booking->where('start_date', ">=", $request->start_date);
+            }
+            if ($request->has('end_date')) {
+                $booking->where('end_date', "<=", $request->end_date);
+            }
             if ($request->has('booking_id')) {
                 $booking->where('id', "=", $request->booking_id);
+            }
+            if ($request->has('status')) {
+                if ($request->status == "prepairing") {
+
+                    $booking->where('status_id', "=", Status::where("name", "like", "101%")->first()->id);
+                }
+                if ($request->status == "pending") {
+                    $booking->where('status_id', "=", Status::where("name", "like", "102%")->first()->id);
+                }
+                if ($request->status == "approve") {
+                    $booking->where('status_id', "=", Status::where("name", "like", "103%")->first()->id);
+                }
+                if ($request->status == "complete") {
+                    $booking->where('status_id', "=", Status::where("name", "like", "104%")->first()->id);
+                }
             }
 
             $response = array();

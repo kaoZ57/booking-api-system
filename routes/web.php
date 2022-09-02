@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CentralController;
+use App\Http\Controllers\ViewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,7 +16,17 @@ use App\Http\Controllers\CentralController;
 */
 
 Route::view('/', 'welcome')->name('welcome');
+
 Route::get('/home', function () {
-    return view('home')->with('response');
+    $response = "";
+    return view('home', compact('response'));
 })->name('home');
 Route::post('/signin', [CentralController::class, 'signin'])->name('sign.in');
+
+// Route::get('/login', [ViewController::class, 'login_view'])->name('login');
+// Route::get('/register', [ViewController::class, 'register_view'])->name('register');
+// Route::post('/loginPOST', [ViewController::class, 'login'])->name('login.post');
+// Route::post('/registerPOST', [ViewController::class, 'register'])->name('register.post');
+
+// Route::middleware(['auth:sanctum'])->group(function () {
+// });

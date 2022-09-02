@@ -84,7 +84,7 @@ class OutOfServiceController extends Controller
             if ($request->out_of_service['ready_to_use'] == 1) {
                 $item->update([
                     'amount' => $item['amount'] + $out_of_service['amount'],
-                    'amount_update_at' => Carbon::now()->setTimezone('Asia/Bangkok')->toDateTimeString(),
+                    'amount_update_at' => Carbon::now()->setTimezone('Asia/Bangkok'),
                 ]);
             }
 

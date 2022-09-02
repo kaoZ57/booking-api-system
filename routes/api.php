@@ -34,6 +34,7 @@ Route::group(['prefix' => 'central'], function () {
 Route::group(['middleware' => ['manage']], function () {
     Route::get('/search_item', [FilterController::class, 'item_filter']);
     Route::get('/search_booking', [FilterController::class, 'booking_filter']);
+    Route::get('/search_date', [FilterController::class, 'scopeStartsBefore']);
     //user authentication
     Route::group(['prefix' => 'auth'], function () {
         Route::post('/register', [AuthController::class, 'register']);

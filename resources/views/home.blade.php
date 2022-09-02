@@ -17,12 +17,12 @@
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>
 
-    <p>you key = </p>
-    @if ($response)
-        @foreach ($response as $v)
-            <p>{{ $v->api_key }}</p>
-        @endforeach
-    @endif
+    <p>you key = @if ($response)
+            {{ $response }}
+        @endif
+    </p>
+    {{-- <p>{{ $response }}</p> --}}
+
 
 </body>
 

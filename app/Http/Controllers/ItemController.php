@@ -23,6 +23,7 @@ class ItemController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+
         try {
             $request->validate([
                 'item' => 'required'
@@ -102,26 +103,19 @@ class ItemController extends Controller
             //     ->select('item.*', 'tag.name as tag_name')
             //     ->get();
 
-            // if ($request->filter['item_id']) {
-            //     $outputB = array_filter($response, function ($k, $v) {
-            //         return $k == 'id' && $v == 1;
-            //     }, ARRAY_FILTER_USE_BOTH);
-            //     return $this->bookingResponse(201, 'successful', 'item', $outputB, Response::HTTP_OK);
-            // }
-
-
+            // return $this->bookingResponse(201, 'successful', 'item', $request->filter->has('item_id'), Response::HTTP_OK);
             $items = Item::where('created_at', '<', Carbon::now()->setTimezone('Asia/Bangkok'));
             $response = array();
 
-            if ($request->has('item_id')) {
-                $items->where('id', "=", $request->item_id);
-            }
-            // if ($request->has('tag_id')) {
+            // if ($request->filter->has('item_id')) {
+            //     $items->where('id', "=", $request->item_id);
+            // }
+            // if ($request->filter->has('tag_id')) {
             //     $items->where('id', "=", $request->tag_id)->join('tag_item', $request->tag_id, '=', 'tag_item.tag_id');
             // }
-            if ($request->has('name')) {
-                $items->where('name', "like", "%{$request->name}%");
-            }
+            // if ($request->filter->has('name')) {
+            //     $items->where('name', "like", "%{$request->name}%");
+            // }
 
             foreach ($items->get() as $value) {
                 $tag_Item = Tag_Item::where("item_id", "=", $value["id"])->get();

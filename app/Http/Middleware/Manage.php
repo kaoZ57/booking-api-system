@@ -30,6 +30,8 @@ class Manage
                 'response' => 'no api key',
             ]);
         }
+
+        DB::connection('mysql');
         config(['database.connections.mysql.database' => $central->name]);
         DB::purge('mysql');
         DB::reconnect('mysql');

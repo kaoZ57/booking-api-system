@@ -22,9 +22,9 @@ class Booking extends Model
         'verify_date'
     ];
 
-    public function scopeStartsBefore(Builder $query, $date): Builder
+    public function scopeStartsBetween(Builder $query, $date): Builder
     {
 
-        return $query->where('end_date', '<=', Carbon::parse($date));
+        return $query->where(Carbon::parse($date), 'between', 'start_date');
     }
 }

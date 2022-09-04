@@ -24,15 +24,15 @@ class Manage
                 'response' => 'no api key',
             ]);
         }
-        $central = Central::Where('api_key', '=', hash('crc32c', $request->header('api_key')))->first();
-        if (!$central) {
-            return response()->json([
-                'response' => 'no api key',
-            ]);
-        }
+        // $central = Central::Where('api_key', '=', hash('crc32c', $request->header('api_key')))->first();
+        // if (!$central) {
+        //     return response()->json([
+        //         'response' => 'no api key',
+        //     ]);
+        // }
 
         DB::connection('mysql');
-        config(['database.connections.mysql.database' => $central->name]);
+        config(['database.connections.mysql.database' => $request->header('api_key')]);
         DB::purge('mysql');
         DB::reconnect('mysql');
         return $next($request);

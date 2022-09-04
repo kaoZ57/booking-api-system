@@ -11,7 +11,7 @@ class Central extends Model
     public $table = 'central';
     public $timestamps = true;
     protected $fillable = [
-        'name',
+        'user_id',
         'api_key',
     ];
 }

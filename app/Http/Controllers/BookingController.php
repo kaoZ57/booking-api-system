@@ -80,7 +80,7 @@ class BookingController extends Controller
 
             $response = ([
                 'id' => $booking['id'],
-                'user_id' => $booking['user_id'],
+                'user_id' => $booking['users_id'],
                 'store_id' => $booking['store_id'],
                 'status_id' => $booking['status_id'],
                 'start_date' => $booking['start_date'],
@@ -294,8 +294,14 @@ class BookingController extends Controller
                 $booking_item = Booking_Item::find($value['id']);
 
                 $booking = Booking::find($booking_item['booking_id']);
+                if ($booking['status_id'] == 1) {
+                    return $this->bookingResponse(404, 'แก้ไขไม่ได้การจองนี้ถูกปฏิเสธ', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
+                }
                 if ($booking['status_id'] == 2) {
                     return $this->bookingResponse(404, 'คุณยืนยันการจองไปแล้ว', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
+                }
+                if ($booking['status_id'] == 4) {
+                    return $this->bookingResponse(404, 'การจองนี้เสร็จสิ้นแล้วไม่สามารถแก้ไข้ได้', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
                 }
                 if (!$booking_item) {
                     return $this->bookingResponse(404, 'ไม่มีรายการจอง', 'booking_item', '', Response::HTTP_NOT_FOUND); //แก้
@@ -303,6 +309,10 @@ class BookingController extends Controller
                 if ($booking['users_id'] != Auth::user()->id) {
                     return $this->bookingResponse(404, 'คุณไม่ใช่เจ้าของใบจอง', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
                 }
+                if ($booking_item['amount'] < 1) {
+                    return $this->bookingResponse(404, 'คุณไม่ได้ใส่จำนวนจอง', 'booking_item', '', Response::HTTP_NOT_FOUND); //แก้
+                }
+
 
                 $booking_item->update([
                     'note_user' => $value['note_user'],
@@ -346,6 +356,9 @@ class BookingController extends Controller
                 if ($booking['status_id'] == 1) {
                     return $this->bookingResponse(404, 'เจ้าของยังไม่ได้ยืนยันการจอง', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
                 }
+                if ($booking['status_id'] == 4) {
+                    return $this->bookingResponse(404, 'การจองนี้เสร็จสิ้นแล้วไม่สามารถแก้ไข้ได้', 'booking', '', Response::HTTP_NOT_FOUND); //แก้
+                }
                 if (!$booking_item) {
                     return $this->bookingResponse(404, 'ไม่มีรายการของที่จอง', 'booking_item', '', Response::HTTP_NOT_FOUND); //แก้
                 }
@@ -359,7 +372,7 @@ class BookingController extends Controller
                 array_push($status, $value['status_id']);
             }
 
-
+            //เช็คหาสถานพทั้งหมดว่าเหมือนกันไหม
             foreach ($status as $value) {
                 if ($status[0] != $value) {
                     $isStatus = false;
@@ -374,6 +387,8 @@ class BookingController extends Controller
                 }
                 if ($status[0] == 6) {
                     $booking->update(['status_id' => 2]);
+                }
+                if ($status[0] == 7) {
                     $booking_return = Booking_Item::where("booking_id", "=", $booking['id'])->get();
                     foreach ($booking_return as $value) {
                         $item_data = Item::find($value['item_id']);
@@ -383,8 +398,13 @@ class BookingController extends Controller
                         }
                         $item_data->update(['amount' => $amount]);
                     }
-                }
-                if ($status[0] == 7) {
+
+                    foreach ($booking_return as $value) {
+                        $item_data = Item::find($value['item_id']);
+                        if ($item_data['is_not_return'] == 1) {
+                            $value->update(['status_id' => 9, 'return_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
+                        }
+                    }
                     $booking->update(['status_id' => 3, 'verify_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
                 }
                 if ($status[0] == 8) {

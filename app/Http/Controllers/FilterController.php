@@ -45,10 +45,14 @@ class FilterController extends Controller
     public function scopeStartsBefore()
 
     {
-        QueryBuilder::for(Booking::class)
+        $booking = QueryBuilder::for(Booking::class)
             ->allowedFilters([
-                AllowedFilter::scope('starts_before'),
+                AllowedFilter::scope('starts_between'),
             ])
+            ->select('booking.*')
             ->get();
+
+
+        return $booking;
     }
 }

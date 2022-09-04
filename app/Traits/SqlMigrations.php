@@ -9,14 +9,29 @@ use Spatie\Permission\Models\Role;
 use Illuminate\Support\Str;
 use App\Models\Central;
 use App\Models\Store;
+use Illuminate\Support\Facades\Auth;
 
 trait SqlMigrations
 {
+  public function apiKeyHashing()
+  {
+    // $hashed_password = str_replace(' ', '', strtolower(crypt(crypt(Auth::user()->id, 'CS#13'), 'BooKinGAIpSYsIlovEPhaYUT') . crypt('API' . Auth::user()->id . 'KEY' . Auth::user()->id, 'I LoVe Xkalux') . '|table'));
+    // $hashed_password = password_hash(Auth::user()->id, PASSWORD_ARGON2ID);
+    $hashed_password = substr(password_hash(Auth::user()->id, PASSWORD_ARGON2ID), 33);
+    return $hashed_password;
+  }
+
+
   public function migration(string $name)
   {
+
     $name = strtolower($name);
-    DB::statement("CREATE DATABASE `$name` DEFAULT CHARACTER SET utf8");
-    $link = mysqli_connect("localhost", "root", "", $name);
+    $hashed_password = $this->apiKeyHashing();
+
+    $user = User::find(Auth::user()->id);
+
+    DB::statement("CREATE DATABASE `$hashed_password` DEFAULT CHARACTER SET utf8");
+    $link = mysqli_connect("localhost", "root", "", $hashed_password);
     $sql = array();
     $users = "CREATE TABLE IF NOT EXISTS `users` (
                     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT, 
@@ -292,15 +307,15 @@ trait SqlMigrations
     }
     if ($query) {
       $central = Central::create([
-        'name' => $name,
-        'api_key' => hash('crc32c', $plainTextToken = Str::random(39)),
+        'user_id' => Auth::user()->id,
+        'api_key' => $hashed_password,
       ]);
-      config(['database.connections.mysql.database' => $name]);
+      config(['database.connections.mysql.database' => $hashed_password]);
       DB::purge('mysql');
       $ownerUser =   User::create([
-        'name'  => 'Owner',
-        'email' => 'owner@owner.com',
-        'password' => Hash::make('owner123')
+        'name'  => $user->name,
+        'email' => $user->email,
+        'password' => $user->password
       ]);
       $roles = array(
         array(
@@ -365,10 +380,14 @@ trait SqlMigrations
       ]);
       return response()->json([
         'name' => $central->name,
-        'api_key' => $plainTextToken,
+        'api_key' => $hashed_password,
         'owner' => $ownerUser
       ]);
     }
-    return response()->json();
+    return response()->json([
+      'name' => '',
+      'api_key' => '',
+      'owner' => ''
+    ]);
   }
 }

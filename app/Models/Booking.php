@@ -25,6 +25,6 @@ class Booking extends Model
     public function scopeStartsBetween(Builder $query, $date): Builder
     {
 
-        return $query->where(Carbon::parse($date), 'between', 'start_date');
+        return $query->where('start_date', 'betwwen',);
     }
 }

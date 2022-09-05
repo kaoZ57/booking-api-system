@@ -97,14 +97,18 @@ class CentralController extends Controller
       return view('dashboard', compact('response'));
     }
     $response = $response->api_key;
-    return view('dashboard', compact('response'));
+    $log =  DB::table('mysql.general_log')->where('argument', 'like', "%$response%")->orderBy('event_time', 'DESC')->get();
+    return view('dashboard', compact('response', 'log'));
   }
 
   public function test()
   {
-    return hash_algos();
-    return hash('gost-crypto', '2022-02-3');
-    return password_hash('kao', PASSWORD_ARGON2ID);
+    // return hash_algos();
+    // return hash('sha3-256', '2022-02-3');
+    // return password_hash('kao', PASSWORD_ARGON2ID);
     // return substr(password_hash('kao', PASSWORD_ARGON2ID), 33);
+
+
+    // return count($log);
   }
 }

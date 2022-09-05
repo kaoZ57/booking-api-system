@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\Response;
 use App\Models\Central;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\FilterController;
 
 /**
  * User Management
@@ -392,14 +393,11 @@ class UserController extends Controller
         }
     }
 
-    public function show_all()
+    public function show_all(Request $request)
     {
         try {
 
-            $user = User::all();
-            if (!$user) {
-                return $this->authResponse(404, 'not found', Response::HTTP_NOT_FOUND);
-            }
+            $user = FilterController::user_filter($request);
             return $this->bookingResponse(201, 'success', 'user', $user, Response::HTTP_OK);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'user', '', Response::HTTP_UNPROCESSABLE_ENTITY);

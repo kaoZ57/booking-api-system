@@ -13,6 +13,7 @@ use Illuminate\Database\QueryException;
 use Exception;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\FilterController;
 
 class OutOfServiceController extends Controller
 {
@@ -58,7 +59,7 @@ class OutOfServiceController extends Controller
     public function show(Request $request): JsonResponse
     {
         try {
-            $out_of_service = Out_of_service::where("ready_to_use", "=", 0)->get();
+            $out_of_service = FilterController::outOfService_filter($request);
 
             return $this->bookingResponse(201, "show successfully", 'out_of_service', $out_of_service, Response::HTTP_OK);
         } catch (QueryException $exception) {

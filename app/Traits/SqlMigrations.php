@@ -17,7 +17,11 @@ trait SqlMigrations
   {
     // $hashed_password = str_replace(' ', '', strtolower(crypt(crypt(Auth::user()->id, 'CS#13'), 'BooKinGAIpSYsIlovEPhaYUT') . crypt('API' . Auth::user()->id . 'KEY' . Auth::user()->id, 'I LoVe Xkalux') . '|table'));
     // $hashed_password = password_hash(Auth::user()->id, PASSWORD_ARGON2ID);
-    $hashed_password = substr(password_hash(Auth::user()->id, PASSWORD_ARGON2ID), 33);
+    // $hashed_password = substr(password_hash(Auth::user()->id, PASSWORD_ARGON2ID), 33);
+
+    $key =  Auth::user()->create_at;
+    $salt = 'Rajamangala University of Technology IsanRajamangala University of Technology Isan CS#13 Booking API System';
+    $hashed_password = hash('sha3-256', $salt . $key);
     return $hashed_password;
   }
 

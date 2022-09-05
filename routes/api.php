@@ -38,7 +38,7 @@ Route::group(['middleware' => ['manage']], function () {
     // Route::post('tag/create_tag', [TagController::class, 'store']);
     Route::get('/search_item', [FilterController::class, 'item_filter']);
     Route::get('/search_booking', [FilterController::class, 'booking_filter']);
-    Route::get('/search_date', [FilterController::class, 'scopeStartsBefore']);
+    Route::get('/search_date', [FilterController::class, 'scopeStartsBetween']);
     //user authentication
     Route::group(['prefix' => 'auth'], function () {
         Route::post('/register', [AuthController::class, 'register']);

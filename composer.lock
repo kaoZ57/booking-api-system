@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "55f0eb8279069a4ac34f2b332e84e622",
+    "content-hash": "fd41e35bdad429001e0df134c269c7e4",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -771,6 +771,49 @@
                 }
             ],
             "time": "2022-02-23T14:25:13+00:00"
+        },
+        {
+            "name": "fyz/traffic",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/faizzed/traffic.git",
+                "reference": "30a92e623add2a38e087bcc83f25c31c118f4403"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/faizzed/traffic/zipball/30a92e623add2a38e087bcc83f25c31c118f4403",
+                "reference": "30a92e623add2a38e087bcc83f25c31c118f4403",
+                "shasum": ""
+            },
+            "default-branch": true,
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Traffic\\Providers\\TrafficServiceProvider",
+                        "Traffic\\Providers\\TrafficEventServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Traffic\\": "src/Traffic/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "authors": [
+                {
+                    "name": "Faiz09",
+                    "email": "faizk2413@gmail.com"
+                }
+            ],
+            "description": "Monitor laravel traffic.",
+            "support": {
+                "issues": "https://github.com/faizzed/traffic/issues",
+                "source": "https://github.com/faizzed/traffic/tree/master"
+            },
+            "time": "2019-08-12T11:40:14+00:00"
         },
         {
             "name": "graham-campbell/result-type",
@@ -8741,7 +8784,9 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": [],
+    "stability-flags": {
+        "fyz/traffic": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

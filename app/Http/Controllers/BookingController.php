@@ -19,6 +19,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
+use App\Http\Controllers\FilterController;
 
 class BookingController extends Controller
 {
@@ -101,41 +102,16 @@ class BookingController extends Controller
     public function show(Request $request): JsonResponse
     {
         try {
-            $booking = Booking::where('created_at', '<', Carbon::now()->setTimezone('Asia/Bangkok'));
-            if ($request->has('users_id')) {
-                $booking->where('users_id', "=", $request->users_id);
-            }
-            if ($request->has('start_date')) {
-                $booking->where('start_date', ">=", $request->start_date);
-            }
-            if ($request->has('end_date')) {
-                $booking->where('end_date', "<=", $request->end_date);
-            }
-            if ($request->has('booking_id')) {
-                $booking->where('id', "=", $request->booking_id);
-            }
-            if ($request->has('status')) {
-                if ($request->status == "prepairing") {
-
-                    $booking->where('status_id', "=", Status::where("name", "like", "101%")->first()->id);
-                }
-                if ($request->status == "pending") {
-                    $booking->where('status_id', "=", Status::where("name", "like", "102%")->first()->id);
-                }
-                if ($request->status == "approve") {
-                    $booking->where('status_id', "=", Status::where("name", "like", "103%")->first()->id);
-                }
-                if ($request->status == "complete") {
-                    $booking->where('status_id', "=", Status::where("name", "like", "104%")->first()->id);
-                }
-            }
+            $booking = FilterController::booking_filter($request);
+            return $this->bookingResponse(201, "show successfully", 'booking', $booking, Response::HTTP_OK);
 
             $response = array();
 
-            foreach ($booking->get() as $value) {
+            foreach ($booking as $value) {
 
                 $booking_item = Booking_Item::where("booking_id", "=", $value['id'])->get();
                 $booking_itemArr = array();
+
                 foreach ($booking_item as $value1) {
                     $booking_itemResponse = ([
                         'id' => $value1['id'],

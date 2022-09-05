@@ -42,18 +42,18 @@ class AuthController extends Controller
         try {
             $validator = Validator::make($request->all(), $request->rules(), $request->messages());
             if ($validator->fails()) {
-                return $this->authResponse(304, (string) Arr::flatten($validator->messages()->get('*')), Response::HTTP_UNPROCESSABLE_ENTITY);
+                return $this->authResponse(500, (string) Arr::flatten($validator->messages()->get('*')), Response::HTTP_UNPROCESSABLE_ENTITY);
             }
             $newUser = User::create(
                 array_merge($request->validated(), ['password' => Hash::make($request->password)])
             );
             if (!$newUser) {
-                return $this->authResponse(301, 'Registration Unsuccessful, please try again', Response::HTTP_UNPROCESSABLE_ENTITY);
+                return $this->authResponse(301, 'failed', Response::HTTP_UNPROCESSABLE_ENTITY);
             }
             // UserCreated::dispatch($newUser); //assign the user a user role
             $newUser->assignRole(Role::find(3)); //assign the customer a user role
             new UserResource($newUser);
-            return $this->authResponse(201, 'Registration successful', Response::HTTP_CREATED);
+            return $this->authResponse(101, 'successfully', Response::HTTP_CREATED);
         } catch (QueryException $exception) {
             return $this->authResponse(500, $exception->errorInfo[2], Response::HTTP_UNPROCESSABLE_ENTITY);
             // return $this->commonResponse(false, $exception->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -85,7 +85,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), $rules, $messages);
 
         if ($validator->fails()) {
-            return $this->bookingResponse(304, (string) Arr::flatten($validator->messages()->get('*')), 'token', '', Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->bookingResponse(500, (string) Arr::flatten($validator->messages()->get('*')), 'token', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         }
         try {
             $user = User::firstWhere('email', $request->email);
@@ -94,13 +94,13 @@ class AuthController extends Controller
             }
             if (!Hash::check($request->password, $user->password)) {
 
-                return $this->bookingResponse(302, 'Invalid password', 'token',  '', Response::HTTP_EXPECTATION_FAILED);
+                return $this->bookingResponse(206, 'invalid password', 'token',  '', Response::HTTP_EXPECTATION_FAILED);
             }
             $data = [
                 'user' => new UserResource($user),
                 'accessToken' => $token = $user->createToken('crm-user')->plainTextToken //generate an access token for the user
             ];
-            return $this->bookingResponse(201, 'Login Success', 'token',  $token, Response::HTTP_OK);
+            return $this->bookingResponse(101, 'successfully', 'token',  $token, Response::HTTP_OK);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'token', '', Response::HTTP_UNPROCESSABLE_ENTITY);
             // return $this->commonResponse(false, $exception->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -122,10 +122,10 @@ class AuthController extends Controller
         try {
             $user = $request->user();
             if ($user->tokens()->delete()) {
-                return $this->authResponse(201, 'Logout Successful', Response::HTTP_OK);
+                return $this->authResponse(101, 'successfully', Response::HTTP_OK);
                 // return $this->commonResponse(true, 'Logout Successful', '', Response::HTTP_OK);
             }
-            return $this->authResponse(404, 'Failed to logout', Response::HTTP_EXPECTATION_FAILED);
+            return $this->authResponse(301, 'failed', Response::HTTP_EXPECTATION_FAILED);
             // return $this->commonResponse(false, 'Failed to logout', '', Response::HTTP_EXPECTATION_FAILED);
         } catch (Exception $exception) {
             Log::critical('Failed to perform user logout. ERROR ' . $exception->getTraceAsString());

@@ -31,7 +31,7 @@ class TagController extends Controller
                 'is_active' => $request->tag['is_active'],
             ]);
 
-            return $this->bookingResponse(201, 'Tag Created successfully', 'tag', $tag,  Response::HTTP_CREATED);
+            return $this->bookingResponse(101, 'successfully', 'tag', $tag,  Response::HTTP_CREATED);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'tag', '',  Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
@@ -46,7 +46,7 @@ class TagController extends Controller
 
             $tags = FilterController::tag_filter($request);
 
-            return $this->bookingResponse(201, "show successfully", 'tag', $tags, Response::HTTP_OK);
+            return $this->bookingResponse(101, "successfully", 'tag', $tags, Response::HTTP_OK);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'tag', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
@@ -72,7 +72,7 @@ class TagController extends Controller
                 'name' => $request->tag['name'],
                 'is_active' => $request->tag['is_active'],
             ]);
-            return $this->bookingResponse(201, 'update successfully', 'tag', $tag, Response::HTTP_OK);
+            return $this->bookingResponse(101, 'successfully', 'tag', $tag, Response::HTTP_OK);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'tag', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {

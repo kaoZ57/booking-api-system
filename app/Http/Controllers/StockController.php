@@ -24,7 +24,7 @@ class StockController extends Controller
             ]);
             $item = Item::find($request->stock['item_id']);
             if (!$item) {
-                return $this->bookingResponse(404, 'ไม่เจอ', 'stock', '',  Response::HTTP_NOT_FOUND); //แก้
+                return $this->bookingResponse(404, 'not found', 'stock', '',  Response::HTTP_NOT_FOUND);
             }
 
             $stock = Stock::create([
@@ -37,7 +37,7 @@ class StockController extends Controller
                 'amount_update_at' => Carbon::now()->setTimezone('Asia/Bangkok')->toDateTimeString(),
             ]);
 
-            return $this->bookingResponse(201, 'Stock Created successfully', 'stock', $stock,  Response::HTTP_CREATED);
+            return $this->bookingResponse(101, 'successfully', 'stock', $stock,  Response::HTTP_CREATED);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'stock', '',  Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {

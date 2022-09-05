@@ -33,7 +33,7 @@ class ItemController extends Controller
 
             foreach ($request->item['tag'] as  $value) {
                 if (!Tag::find($value['id'])) {
-                    return $this->bookingResponse(404, 'ไม่มีแทค', 'item', '', Response::HTTP_CREATED); //แก้
+                    return $this->bookingResponse(404, 'not found', 'item', '', Response::HTTP_CREATED);
                 }
             }
 
@@ -76,7 +76,7 @@ class ItemController extends Controller
                 'tag' =>  $item_tag,
             ];
 
-            return $this->bookingResponse(201, 'successfully', 'item', $result, Response::HTTP_CREATED);
+            return $this->bookingResponse(101, 'successfully', 'item', $result, Response::HTTP_CREATED);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'item', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
@@ -92,12 +92,12 @@ class ItemController extends Controller
             //         $items = DB::table('item')
             //             ->where("id", "=", $request->filter['item_id'])
             //             ->get();
-            //         return $this->bookingResponse(201, 'successful', 'item', $items, Response::HTTP_OK);
+            //         return $this->bookingResponse(101, 'successfully', 'item', $items, Response::HTTP_OK);
             //     }
             // }
             // if ($request->filter['tag_id']) {
             //     $items = DB::table('item')->where("id", "=", $request->filter['tag_id'])->get();
-            //     return $this->bookingResponse(201, 'successful', 'item', $items, Response::HTTP_OK);
+            //     return $this->bookingResponse(101, 'successfully', 'item', $items, Response::HTTP_OK);
             // }
             // $items = DB::table('item')
             //     ->join('tag_item', 'item.id', '=', 'tag_item.item_id')
@@ -105,7 +105,7 @@ class ItemController extends Controller
             //     ->select('item.*', 'tag.name as tag_name')
             //     ->get();
 
-            // return $this->bookingResponse(201, 'successful', 'item', $request->has('filter.name'), Response::HTTP_OK);
+            // return $this->bookingResponse(101, 'successfully', 'item', $request->has('filter.name'), Response::HTTP_OK);
 
 
             $response = array();
@@ -134,7 +134,7 @@ class ItemController extends Controller
 
                 array_push($response, $itemdata);
             }
-            return $this->bookingResponse(201, 'successful', 'item', $response, Response::HTTP_OK);
+            return $this->bookingResponse(101, 'successfully', 'item', $response, Response::HTTP_OK);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'item', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
@@ -152,13 +152,13 @@ class ItemController extends Controller
 
             $item = Item::find($request->item['id']);
             if (!$item) {
-                return $this->bookingResponse(404, 'ไม่มีของ', 'item', '',  Response::HTTP_NOT_FOUND); //แก้
+                return $this->bookingResponse(404, 'not found', 'item', '',  Response::HTTP_NOT_FOUND);
             }
 
             foreach ($request->item['tag'] as $value) {
                 $tag = Tag::find($value['id']);
                 if (!$tag) {
-                    return $this->bookingResponse(404, 'ไม่มีแท็ค', 'item', '',  Response::HTTP_NOT_FOUND); //แก้
+                    return $this->bookingResponse(404, 'not found', 'item', '',  Response::HTTP_NOT_FOUND);
                 }
             }
 
@@ -202,7 +202,7 @@ class ItemController extends Controller
                 'tag' =>  $item_tag,
             ];
 
-            return $this->bookingResponse(201, 'successful', 'item', $result, Response::HTTP_OK);
+            return $this->bookingResponse(101, 'successfully', 'item', $result, Response::HTTP_OK);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'item', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {

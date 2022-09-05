@@ -21,7 +21,8 @@ trait SqlMigrations
 
     $key =  Auth::user()->create_at;
     $salt = 'Rajamangala University of Technology IsanRajamangala University of Technology Isan CS#13 Booking API System';
-    $hashed_password = hash('sha3-256', $salt . $key);
+    $hashed_password = password_hash($salt . $key, PASSWORD_BCRYPT, ['memory_cost' => 2048, 'time_cost' => 4, 'threads' => 3]);
+    // $hashed_password = hash('sha256', $salt . $key);
     return $hashed_password;
   }
 

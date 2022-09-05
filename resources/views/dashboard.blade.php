@@ -56,8 +56,8 @@
                     </div>
                 </div>
             </div>
-            @if ($log)
-                <br>
+            {{-- @if ($log) --}}
+            {{-- <br>
                 <div class="bg-white overflow-hidden dark:bg-gray-900 shadow-sm sm:rounded-lg">
                     <div class="md:col-span-1">
                         <div class="px-4 sm:px-0">
@@ -90,34 +90,34 @@
                                 </thead>
                                 <tbody>
                                     {{-- {{ $log }} --}}
-                                    @foreach ($log as $v)
-                                        <tr class="bg-white border-b dark:bg-gray-900 dark:border-gray-700">
-                                            <th scope="row"
-                                                class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                                {{ $v->event_time }}
-                                            </th>
-                                            <td class="py-4 px-6">
-                                                {{ $v->user_host }}
-                                            </td>
-                                            <td class="py-4 px-6">
-                                                {{ $v->server_id }}
-                                            </td>
-                                            <td class="py-4 px-6">
-                                                {{ $v->command_type }}
+            {{-- @foreach ($log as $v)
+                <tr class="bg-white border-b dark:bg-gray-900 dark:border-gray-700">
+                    <th scope="row" class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                        {{ $v->event_time }}
+                    </th>
+                    <td class="py-4 px-6">
+                        {{ $v->user_host }}
+                    </td>
+                    <td class="py-4 px-6">
+                        {{ $v->server_id }}
+                    </td>
+                    <td class="py-4 px-6">
+                        {{ $v->command_type }}
 
-                                            </td>
-                                            <td class="py-4 px-6">
-                                                {{ $v->argument }}
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            @else
-            @endif
+                    </td>
+                    <td class="py-4 px-6">
+                        {{ $v->argument }}
+                    </td>
+                </tr>
+            @endforeach --}}
+            {{-- </tbody>
+            </table>
+        </div>
+    </div>
+    </div> --}}
+            {{-- @else --}}
+            {{-- <div class="bg-white overflow-hidden dark:bg-gray-900 shadow-sm sm:rounded-lg"></div> --}}
+            {{-- @endif --}}
         </div>
     </div>
 

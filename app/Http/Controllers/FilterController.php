@@ -104,7 +104,7 @@ class FilterController extends Controller
             $items->where('amount', "<=", $request->filter['less_amount']);
         }
         if ($request->has('filter.greater_amount')) {
-            $items->where('amount', "=>", $request->filter['less_amount']);
+            $items->where('amount', ">=", $request->filter['greater_amount']);
         }
         if ($request->has('filter.limit')) {
             $items->limit($request->filter['limit']);
@@ -130,7 +130,7 @@ class FilterController extends Controller
             $out_of_services->where('amount', "<=", $request->filter['less_amount']);
         }
         if ($request->has('filter.greater_amount')) {
-            $out_of_services->where('amount', "=>", $request->filter['less_amount']);
+            $out_of_services->where('amount', ">=", $request->filter['greater_amount']);
         }
         if ($request->has('filter.ready_to_use')) {
             $out_of_services->where('ready_to_use', "=", $request->filter['ready_to_use']);

@@ -31,7 +31,7 @@ class AuthenticateSanctum
         return response()->json([
             'response' => [
                 'code' => [
-                    'key' => 404,
+                    'key' => 200,
                     'message' =>  'unauthenticated',
                 ],
             ],

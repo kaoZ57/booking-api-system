@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class CentralController extends Controller
 {
@@ -53,13 +54,13 @@ class CentralController extends Controller
       // $centralJson = response()->json([
 
       if (!$central || !$mycentral) {
-        return 'ไม่มี'; //แก้
+        return 'not found';
       }
       $response = response()->json([
         'response' => [
           'code' => [
-            'key' => 201,
-            'message' => 'ok', //แก้
+            'key' => 200,
+            'message' => 'ok',
           ],
           'my_central' => $mycentral->name,
           'central' => $centralJson
@@ -97,14 +98,32 @@ class CentralController extends Controller
       return view('dashboard', compact('response'));
     }
     $response = $response->api_key;
-    $log =  DB::table('mysql.general_log')->where('argument', 'like', "%$response%")->orderBy('event_time', 'DESC')->get();
-    return view('dashboard', compact('response', 'log'));
+    // $log =  DB::table('mysql.general_log')->where('argument', 'like', "%$response%")->orderBy('event_time', 'DESC')->get();
+    // dd($log);
+    // if (!$log) {
+    //   $log = array();
+    // }
+    return view('dashboard', compact('response'));
   }
 
-  public function test()
+  public function test(Request $request)
   {
+    $response = ([
+      "event_time" => Carbon::now()->setTimezone('Asia/Bangkok'),
+      "user_id" => 1,
+      "method" => 'POST',
+      "fullUrl" => $request->fullUrl(),
+      "ipAddress" => $request->ip(),
+      "request" => $request->collect(),
+      "message" => "successfully",
+
+      // "collect" => $request->collect()
+    ]);
+
+    return $response;
     // return hash_algos();
-    // return hash('sha3-256', '2022-02-3');
+    // return hash('sha256', '2022-02-3');
+    // return password_hash("rasmuslerdorf", PASSWORD_BCRYPT, ['memory_cost' => 2048, 'time_cost' => 4, 'threads' => 3]);
     // return password_hash('kao', PASSWORD_ARGON2ID);
     // return substr(password_hash('kao', PASSWORD_ARGON2ID), 33);
 

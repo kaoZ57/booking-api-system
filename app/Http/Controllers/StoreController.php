@@ -16,7 +16,7 @@ class StoreController extends Controller
     {
         try {
             $stores = Store::all();
-            return $this->bookingResponse(201, "show successfully", 'store', $stores, Response::HTTP_OK);
+            return $this->bookingResponse(101, "successfully", 'store', $stores, Response::HTTP_OK);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'store', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
@@ -43,7 +43,7 @@ class StoreController extends Controller
                 'is_active' => $request->store['is_active'],
             ]);
             $store = Store::find($request->store['id']);
-            return $this->bookingResponse(201, '', 'store', $store, Response::HTTP_OK);
+            return $this->bookingResponse(101, 'successfully', 'store', $store, Response::HTTP_OK);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'store', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {

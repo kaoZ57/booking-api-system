@@ -379,12 +379,12 @@ class UserController extends Controller
             }
             foreach ($user['roles'] as $value) {
                 if ($value->name == 'staff') {
-                    return $this->authResponse(201, 'คนนนี้เป็น staff อยู่แล้ว', Response::HTTP_NOT_FOUND); //แก้
+                    return $this->authResponse(211, 'this user role is already staff', Response::HTTP_NOT_FOUND);
                     break;
                 }
             }
             $user->assignRole(Role::find(2));
-            return $this->authResponse(201, 'success', Response::HTTP_OK);
+            return $this->authResponse(101, 'successfully', Response::HTTP_OK);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'user', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
@@ -398,7 +398,7 @@ class UserController extends Controller
         try {
 
             $user = FilterController::user_filter($request);
-            return $this->bookingResponse(201, 'success', 'user', $user, Response::HTTP_OK);
+            return $this->bookingResponse(101, 'successfully', 'user', $user, Response::HTTP_OK);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'user', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
@@ -414,7 +414,7 @@ class UserController extends Controller
             if (!$user) {
                 return $this->authResponse(404, 'not found', Response::HTTP_NOT_FOUND);
             }
-            return $this->bookingResponse(201, 'success', 'user', $user, Response::HTTP_OK);
+            return $this->bookingResponse(101, 'successfully', 'user', $user, Response::HTTP_OK);
         } catch (QueryException $exception) {
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'user', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {

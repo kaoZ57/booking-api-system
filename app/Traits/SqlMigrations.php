@@ -307,6 +307,20 @@ trait SqlMigrations
                   ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;";
     array_push($sql, $out_of_service);
 
+    $database_log = "CREATE TABLE IF NOT EXISTS `database_log` (
+      `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+      `event_time` timestamp NOT NULL,
+      `user_id` bigint(20) NOT NULL,
+      `method` varchar(255) NOT NULL,
+      `fullUrl` varchar(255) NOT NULL,
+      `ipAddress` varchar(255) NOT NULL,
+      `request` varchar(999) NOT NULL,
+      `message` varchar(255) NOT NULL,
+      `size_MB` varchar(255) NOT NULL,
+      PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8;";
+
+    array_push($sql, $database_log);
     foreach ($sql as $value) {
       $query = mysqli_query($link, $value);
     }

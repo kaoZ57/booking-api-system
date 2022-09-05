@@ -24,6 +24,7 @@ use App\Models\Central;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\FilterController;
+use App\Models\DatabaseLog;
 
 /**
  * User Management
@@ -49,6 +50,7 @@ class UserController extends Controller
             }
             return $this->commonResponse(true, 'Users List', UserResource::collection($users)->response()->getData(true), Response::HTTP_OK);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->commonResponse(false, $exception->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical('Failed to fetch user data. ERROR: ' . $exception->getTraceAsString());
@@ -85,6 +87,7 @@ class UserController extends Controller
             }
             return $this->commonResponse(false, 'Failed to create user', '', Response::HTTP_EXPECTATION_FAILED);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->commonResponse(false, $exception->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical('Could not create new user account. ERROR: ' . $exception->getTraceAsString());
@@ -109,6 +112,7 @@ class UserController extends Controller
             }
             return $this->commonResponse(true, 'User Details', new UserResource($user), Response::HTTP_OK);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->commonResponse(false, $exception->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical('Could not fetch user details. ERROR: ' . $exception->getTraceAsString());
@@ -386,9 +390,11 @@ class UserController extends Controller
             $user->assignRole(Role::find(2));
             return $this->authResponse(101, 'successfully', Response::HTTP_OK);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'user', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical(': ' . $exception->getTraceAsString());
+            DatabaseLog::log($request, (string) $exception->getMessage());
             return $this->bookingResponse(500, (string) $exception->getMessage(), 'user', '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -398,27 +404,34 @@ class UserController extends Controller
         try {
 
             $user = FilterController::user_filter($request);
+            DatabaseLog::log($request, 'successfully');
             return $this->bookingResponse(101, 'successfully', 'user', $user, Response::HTTP_OK);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'user', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical(': ' . $exception->getTraceAsString());
+            DatabaseLog::log($request, (string) $exception->getMessage());
             return $this->bookingResponse(500, (string) $exception->getMessage(), 'user', '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function show_current()
+    public function show_current(Request $request)
     {
         try {
             $user = User::with('customers', 'roles')->find(Auth::user()->id);
             if (!$user) {
+                DatabaseLog::log($request, 'not found');
                 return $this->authResponse(404, 'not found', Response::HTTP_NOT_FOUND);
             }
+            DatabaseLog::log($request, 'successfully');
             return $this->bookingResponse(101, 'successfully', 'user', $user, Response::HTTP_OK);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'user', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical(': ' . $exception->getTraceAsString());
+            DatabaseLog::log($request, (string) $exception->getMessage());
             return $this->bookingResponse(500, (string) $exception->getMessage(), 'user', '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

@@ -19,6 +19,7 @@ use Illuminate\Support\Arr;
 use App\Models\Central;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
+use App\Models\DatabaseLog;
 
 /**
  * Class AuthController
@@ -37,29 +38,37 @@ class AuthController extends Controller
      * @bodyParam password_confirmation password required Password Confirmation
      * @return JsonResponse
      */
-    public function register(UserRequest $request): JsonResponse
+    public function register(Request $request): JsonResponse
     {
         try {
-            $validator = Validator::make($request->all(), $request->rules(), $request->messages());
-            if ($validator->fails()) {
-                return $this->authResponse(500, (string) Arr::flatten($validator->messages()->get('*')), Response::HTTP_UNPROCESSABLE_ENTITY);
-            }
+            $request->validate([
+                'name' => 'required|string|unique:users|min:3|max:60',
+                'email' => 'required|email|unique:users',
+                'password' => 'required|min:4|max:60|confirmed',
+                'password_confirmation' => 'required'
+            ]);
+            // $validator = Validator::make($request->all(), $request->rules(), $request->messages());
             $newUser = User::create(
                 array_merge($request->validated(), ['password' => Hash::make($request->password)])
             );
             if (!$newUser) {
+                DatabaseLog::log_NoUser($request, 'failed');
                 return $this->authResponse(301, 'failed', Response::HTTP_UNPROCESSABLE_ENTITY);
             }
             // UserCreated::dispatch($newUser); //assign the user a user role
             $newUser->assignRole(Role::find(3)); //assign the customer a user role
             new UserResource($newUser);
+
+            DatabaseLog::log_NoUser($request, 'successfully');
             return $this->authResponse(101, 'successfully', Response::HTTP_CREATED);
         } catch (QueryException $exception) {
-            return $this->authResponse(500, $exception->errorInfo[2], Response::HTTP_UNPROCESSABLE_ENTITY);
+            DatabaseLog::log_NoUser($request, (string) $exception->errorInfo[2]);
+            return $this->authResponse(500, (string)  $exception->errorInfo[2], Response::HTTP_UNPROCESSABLE_ENTITY);
             // return $this->commonResponse(false, $exception->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical('Something went wrong registering a new user. ERROR:' . $exception->getTraceAsString());
-            return $this->authResponse(500, $exception->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+            DatabaseLog::log_NoUser($request, (string) $exception->getMessage());
+            return $this->authResponse(500, (string)  $exception->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
             // return $this->commonResponse(false, $exception->getMessage(), '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -85,27 +94,32 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), $rules, $messages);
 
         if ($validator->fails()) {
+            DatabaseLog::log_NoUser($request, (string) Arr::flatten($validator->messages()->get('*')));
             return $this->bookingResponse(500, (string) Arr::flatten($validator->messages()->get('*')), 'token', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         }
         try {
             $user = User::firstWhere('email', $request->email);
             if (!$user) {
+                DatabaseLog::log_NoUser($request, 'A user with the provided credentials could not be found');
                 return $this->bookingResponse(404, 'A user with the provided credentials could not be found', 'token', '', Response::HTTP_EXPECTATION_FAILED);
             }
             if (!Hash::check($request->password, $user->password)) {
-
+                DatabaseLog::log_NoUser($request, 'invalid password');
                 return $this->bookingResponse(206, 'invalid password', 'token',  '', Response::HTTP_EXPECTATION_FAILED);
             }
             $data = [
                 'user' => new UserResource($user),
                 'accessToken' => $token = $user->createToken('crm-user')->plainTextToken //generate an access token for the user
             ];
+            DatabaseLog::log_NoUser($request, 'successfully');
             return $this->bookingResponse(101, 'successfully', 'token',  $token, Response::HTTP_OK);
         } catch (QueryException $exception) {
+            DatabaseLog::log_NoUser($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'token', '', Response::HTTP_UNPROCESSABLE_ENTITY);
             // return $this->commonResponse(false, $exception->errorInfo[2], '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical('Something went wrong logging in the user. ERROR:' . $exception->getTraceAsString());
+            DatabaseLog::log_NoUser($request, (string) $exception->getMessage());
             return $this->bookingResponse(500, $exception->getMessage(), 'token', '', Response::HTTP_INTERNAL_SERVER_ERROR);
             // return $this->commonResponse(false, $exception->getMessage(), '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -122,13 +136,16 @@ class AuthController extends Controller
         try {
             $user = $request->user();
             if ($user->tokens()->delete()) {
+                DatabaseLog::log($request, 'successfully');
                 return $this->authResponse(101, 'successfully', Response::HTTP_OK);
                 // return $this->commonResponse(true, 'Logout Successful', '', Response::HTTP_OK);
             }
+            DatabaseLog::log($request, 'failed');
             return $this->authResponse(301, 'failed', Response::HTTP_EXPECTATION_FAILED);
             // return $this->commonResponse(false, 'Failed to logout', '', Response::HTTP_EXPECTATION_FAILED);
         } catch (Exception $exception) {
             Log::critical('Failed to perform user logout. ERROR ' . $exception->getTraceAsString());
+            DatabaseLog::log($request, (string) $exception->getMessage());
             return $this->authResponse(500, $exception->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
             // return $this->commonResponse(false, $exception->getMessage(), '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }

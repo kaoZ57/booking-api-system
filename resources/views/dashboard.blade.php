@@ -56,68 +56,100 @@
                     </div>
                 </div>
             </div>
-            {{-- @if ($log) --}}
-            {{-- <br>
-                <div class="bg-white overflow-hidden dark:bg-gray-900 shadow-sm sm:rounded-lg">
-                    <div class="md:col-span-1">
-                        <div class="px-4 sm:px-0">
-                            <br>
-                            <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white">Log Count
-                                {{ Count($log) }} </h3>
-                            <br>
-                        </div>
-                        <div class="overflow-x-auto relative shadow-md sm:rounded-lg">
-                            <table class="w-full text-sm text-left dark:bg-gray-900 text-gray-500 dark:text-gray-400">
-                                <thead
-                                    class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                    <tr>
-                                        <th scope="col" class="py-3 px-6 dark:text-white">
-                                            event_time
-                                        </th>
-                                        <th scope="col" class="py-3 px-6 dark:text-white">
-                                            user_host
-                                        </th>
-                                        <th scope="col" class="py-3 px-6 dark:text-white">
-                                            server_id
-                                        </th>
-                                        <th scope="col" class="py-3 px-6 dark:text-white">
-                                            command_type
-                                        </th>
-                                        <th scope="col" class="py-3 px-6 dark:text-white">
-                                            argument
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {{-- {{ $log }} --}}
-            {{-- @foreach ($log as $v)
-                <tr class="bg-white border-b dark:bg-gray-900 dark:border-gray-700">
-                    <th scope="row" class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                        {{ $v->event_time }}
-                    </th>
-                    <td class="py-4 px-6">
-                        {{ $v->user_host }}
-                    </td>
-                    <td class="py-4 px-6">
-                        {{ $v->server_id }}
-                    </td>
-                    <td class="py-4 px-6">
-                        {{ $v->command_type }}
-
-                    </td>
-                    <td class="py-4 px-6">
-                        {{ $v->argument }}
-                    </td>
-                </tr>
-            @endforeach --}}
-            {{-- </tbody>
-            </table>
         </div>
-    </div>
-    </div> --}}
-            {{-- @else --}}
-            {{-- <div class="bg-white overflow-hidden dark:bg-gray-900 shadow-sm sm:rounded-lg"></div> --}}
-            {{-- @endif --}}
+
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @isset($log)
+                @if ($log)
+                    <br>
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="md:col-span-1">
+                            <div class="px-4 sm:px-0">
+                                <br>
+                                <h3 class="text-lg font-medium leading-6 text-gray-900" style="font-size: 20px">Log Count
+                                    {{ Count($log) }} </h3>
+                                <br>
+                            </div>
+                            <div class="overflow-x-auto relative shadow-md sm:rounded-lg">
+                                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 ">
+                                    <thead class="text-xs text-gray-700  text-gray-900 dark:border-gray-700"
+                                        style="font-size: 18px">
+                                        <tr>
+                                            <th scope="col" class="py-3 px-6 ">
+                                                event_time
+                                            </th>
+                                            <th scope="col" class="py-3 px-6 ">
+                                                user_id
+                                            </th>
+                                            <th scope="col" class="py-3 px-6 ">
+                                                method
+                                            </th>
+                                            <th scope="col" class="py-3 px-6 ">
+                                                fullUrl
+                                            </th>
+                                            <th scope="col" class="py-3 px-6 ">
+                                                ipAddress
+                                            </th>
+                                            {{-- <th scope="col" class="py-3 px-6 dark:text-white">
+                                                request
+                                            </th> --}}
+                                            <th scope="col" class="py-3 px-6 ">
+                                                message
+                                            </th>
+                                            <th scope="col" class="py-3 px-6 ">
+                                                size(MB)
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($log as $v)
+                                            <tr class="bg-white border-b ">
+                                                <th scope="row"
+                                                    class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap text-gray-700">
+                                                    {{ $v->event_time }}
+                                                </th>
+                                                <td class="py-4 px-6 text-gray-700">
+                                                    {{ $v->user_id }}
+                                                </td>
+
+                                                @if ($v->method == 'GET')
+                                                    <td class="py-4 px-6" style="color: green">
+                                                    @elseif ($v->method == 'POST')
+                                                    <td class="py-4 px-6" style="color: orange">
+                                                    @elseif ($v->method == 'PATCH')
+                                                    <td class="py-4 px-6" style="color: blueviolet">
+                                                    @else
+                                                    <td class="py-4 px-6 text-gray-700">
+                                                @endif
+                                                {{ $v->method }}
+                                                </td>
+
+                                                <td class="py-4 px-6 text-gray-700">
+                                                    {{ $v->fullUrl }}
+                                                </td>
+                                                <td class="py-4 px-6 text-gray-700">
+                                                    {{ $v->ipAddress }}
+                                                </td>
+                                                {{-- <td class="py-4 px-6">
+                                                    {{ $v->request }}
+                                                </td> --}}
+                                                <td class="py-4 px-6 text-gray-700">
+                                                    {{ $v->message }}
+                                                </td>
+                                                <td class="py-4 px-6 text-gray-700">
+                                                    {{ $v->size_MB }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <div class="bg-white overflow-hidden dark:bg-gray-900 shadow-sm sm:rounded-lg"></div>
+                @endif
+            @endisset
         </div>
     </div>
 

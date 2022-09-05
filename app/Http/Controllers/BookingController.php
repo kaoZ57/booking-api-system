@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Controllers\FilterController;
+use App\Models\DatabaseLog;
 
 class BookingController extends Controller
 {
@@ -35,24 +36,29 @@ class BookingController extends Controller
             ]);
             $store = Store::find($request->booking['store_id']);
             if (!$store) {
+                DatabaseLog::log($request, 'not found');
                 return $this->bookingResponse(404, 'not found', 'booking', '',  Response::HTTP_NOT_FOUND);
             }
 
             foreach ($request->booking['booking_item'] as $value) {
                 $item = Item::find($value['item_id']);
                 if (!$item) {
+                    DatabaseLog::log($request, 'item out of stock');
                     return $this->bookingResponse(201, 'item out of stock', 'booking', '',  Response::HTTP_NOT_FOUND);
                 }
                 if ($item['is_active'] == 0) {
+                    DatabaseLog::log($request, 'can not booking');
                     return $this->bookingResponse(216, 'can not booking,' . $item['name'] . 'this item not open to booking', 'booking', '',  Response::HTTP_NOT_FOUND);
                 }
                 $amount = $item['amount'] - $value['amount'];
                 if ($amount < 0) {
+                    DatabaseLog::log($request, 'not enough item');
                     return $this->bookingResponse(202, 'not enough item', 'booking', '',  Response::HTTP_NOT_FOUND);
                 }
             }
 
             if ($request->booking['start_date'] <  Carbon::now()->setTimezone('Asia/Bangkok') || $request->booking['end_date'] <  Carbon::now()->setTimezone('Asia/Bangkok') || $request->booking['start_date'] > $request->booking['end_date']) {
+                DatabaseLog::log($request, 'invalid date');
                 return $this->bookingResponse(203, 'invalid date', 'booking', '',  Response::HTTP_NOT_FOUND);
             }
 
@@ -92,11 +98,14 @@ class BookingController extends Controller
                 'booking_item' => $booking_itemArr,
             ]);
 
+            DatabaseLog::log($request, 'successfully');
             return $this->bookingResponse(101, 'successfully', 'booking', $response, Response::HTTP_CREATED);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'booking', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical(': ' . $exception->getTraceAsString());
+            DatabaseLog::log($request, (string) $exception->getMessage());
             return $this->bookingResponse(500, (string) $exception->getMessage(), 'booking', '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -146,11 +155,15 @@ class BookingController extends Controller
                 ]);
                 array_push($response, $bookingArr);
             }
+
+            DatabaseLog::log($request, 'successfully');
             return $this->bookingResponse(101, "successfully", 'booking', $response, Response::HTTP_OK);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'booking', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical(': ' . $exception->getTraceAsString());
+            DatabaseLog::log($request, (string) $exception->getMessage());
             return $this->bookingResponse(500, (string) $exception->getMessage(), 'booking', '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -165,18 +178,23 @@ class BookingController extends Controller
             $status = Status::where("table_name", "=", "booking")->get();
             $booking = Booking::find($request->booking['id']);
             if (!$booking) {
+                DatabaseLog::log($request, 'not found');
                 return $this->bookingResponse(404, 'not found', 'booking', '', Response::HTTP_NOT_FOUND);
             }
             if ($booking->status_id != 1) {
+                DatabaseLog::log($request, 'can not edit');
                 return $this->bookingResponse(212, 'can not edit, booking is pending status', 'booking', '', Response::HTTP_NOT_FOUND);
             }
             if ($request->booking['start_date'] <  Carbon::now()->setTimezone('Asia/Bangkok') || $request->booking['end_date'] <  Carbon::now()->setTimezone('Asia/Bangkok') || $request->booking['start_date'] > $request->booking['end_date']) {
+                DatabaseLog::log($request, 'invalid date');
                 return $this->bookingResponse(203, 'invalid date', 'booking', '',  Response::HTTP_NOT_FOUND);
             }
             if ($booking['users_id'] != Auth::user()->id) {
+                DatabaseLog::log($request, 'you are not owner');
                 return $this->bookingResponse(207, 'you are not owner', 'booking', '', Response::HTTP_NOT_FOUND);
             }
             if ($request->booking['status_id'] < 1 || $request->booking['status_id'] > 2) {
+                DatabaseLog::log($request, 'invalid status');
                 return $this->bookingResponse(204, 'invalid status', 'booking', '', Response::HTTP_NOT_FOUND);
             }
 
@@ -193,11 +211,14 @@ class BookingController extends Controller
                 'status' =>  substr($status[$booking['status_id'] - 1]->name, 4)
             ]);
 
+            DatabaseLog::log($request, 'successfully');
             return $this->bookingResponse(101, 'successfully', 'booking', $response, Response::HTTP_CREATED);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'booking', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical(': ' . $exception->getTraceAsString());
+            DatabaseLog::log($request, (string) $exception->getMessage());
             return $this->bookingResponse(500, (string) $exception->getMessage(), 'booking', '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -212,23 +233,29 @@ class BookingController extends Controller
             foreach ($request->booking_item as $value) {
                 $booking = Booking::find($value['booking_id']);
                 if (!$booking) {
+                    DatabaseLog::log($request, 'not found');
                     return $this->bookingResponse(404, 'not found', 'booking', '',  Response::HTTP_NOT_FOUND);
                 }
                 if ($booking['users_id'] != Auth::user()->id) {
+                    DatabaseLog::log($request, 'you are not owner');
                     return $this->bookingResponse(207, 'you are not owner', 'booking', '', Response::HTTP_NOT_FOUND);
                 }
                 if ($booking['status_id'] != 1) {
+                    DatabaseLog::log($request, 'can not edit, booking is pending status');
                     return $this->bookingResponse(212, 'can not edit, booking is pending status', 'booking', '',  Response::HTTP_NOT_FOUND);
                 }
                 if ($booking['status_id'] < 1 || $booking['status_id'] > 2) {
+                    DatabaseLog::log($request, 'invalid status');
                     return $this->bookingResponse(204, 'invalid status', 'booking', '', Response::HTTP_NOT_FOUND);
                 }
                 $item = Item::find($value['item_id']);
                 if (!$item) {
+                    DatabaseLog::log($request, 'not found');
                     return $this->bookingResponse(404, 'not found', 'booking', '',  Response::HTTP_NOT_FOUND);
                 }
                 $amount = $item['amount'] - $value['amount'];
                 if ($amount < 0) {
+                    DatabaseLog::log($request, 'not enough item', 'booking');
                     return $this->bookingResponse(202, 'not enough item', 'booking', '',  Response::HTTP_NOT_FOUND);
                 }
             }
@@ -248,11 +275,14 @@ class BookingController extends Controller
                 array_push($booking_itemArr, $booking_item);
             }
 
+            DatabaseLog::log($request, 'successfully');
             return $this->bookingResponse(101, 'successfully', 'booking_item', $booking_itemArr, Response::HTTP_CREATED);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'booking_item', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical(': ' . $exception->getTraceAsString());
+            DatabaseLog::log($request, (string) $exception->getMessage());
             return $this->bookingResponse(500, (string) $exception->getMessage(), 'booking_item', '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -272,18 +302,23 @@ class BookingController extends Controller
 
                 $booking = Booking::find($booking_item['booking_id']);
                 if ($booking['status_id'] == 2) {
+                    DatabaseLog::log($request, 'can not edit, you are already confirm booking');
                     return $this->bookingResponse(214, 'can not edit, you are already confirm booking', 'booking', '', Response::HTTP_NOT_FOUND);
                 }
                 if ($booking['status_id'] == 4) {
+                    DatabaseLog::log($request, 'can not edit,booking is completed');
                     return $this->bookingResponse(215, 'can not edit,booking is completed', 'booking', '', Response::HTTP_NOT_FOUND);
                 }
                 if (!$booking_item) {
+                    DatabaseLog::log($request, 'not found');
                     return $this->bookingResponse(404, 'not found', 'booking_item', '', Response::HTTP_NOT_FOUND);
                 }
                 if ($booking['users_id'] != Auth::user()->id) {
+                    DatabaseLog::log($request, 'you are not owner');
                     return $this->bookingResponse(207, 'you are not owner', 'booking', '', Response::HTTP_NOT_FOUND);
                 }
                 if ($booking_item['amount'] < 1) {
+                    DatabaseLog::log($request, "you don't fill amount");
                     return $this->bookingResponse(208, "you don't fill amount", 'booking_item', '', Response::HTTP_NOT_FOUND);
                 }
 
@@ -295,11 +330,15 @@ class BookingController extends Controller
 
                 array_push($response, $booking_item);
             }
+
+            DatabaseLog::log($request, 'successfully');
             return $this->bookingResponse(101, 'successfully', 'booking_item', $response, Response::HTTP_CREATED);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'booking_item', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical(': ' . $exception->getTraceAsString());
+            DatabaseLog::log($request, (string) $exception->getMessage());
             return $this->bookingResponse(500, (string) $exception->getMessage(), 'booking_item', '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -313,6 +352,7 @@ class BookingController extends Controller
             $statusBooking_item = Status::where("table_name", "=", "booking_item")->get();
             foreach ($request->booking_item as $value) {
                 if (!$statusBooking_item->find($value['status_id'])) {
+                    DatabaseLog::log($request, 'invalid status');
                     return $this->bookingResponse(204, 'invalid status', 'booking_item', '', Response::HTTP_NOT_FOUND);
                 }
             }
@@ -325,15 +365,19 @@ class BookingController extends Controller
 
                 $booking = Booking::find($booking_item['booking_id']);
                 if (!$booking) {
+                    DatabaseLog::log($request, 'not found');
                     return $this->bookingResponse(404, 'not found', 'booking', '', Response::HTTP_NOT_FOUND);
                 }
                 if ($booking['status_id'] == 1) {
+                    DatabaseLog::log($request, 'customer not yet confirmed booking');
                     return $this->bookingResponse(210, 'customer not yet confirmed booking', 'booking', '', Response::HTTP_NOT_FOUND);
                 }
                 if ($booking['status_id'] == 4) {
+                    DatabaseLog::log($request, 'can not edit, booking is completed');
                     return $this->bookingResponse(215, 'can not edit, booking is completed', 'booking', '', Response::HTTP_NOT_FOUND);
                 }
                 if (!$booking_item) {
+                    DatabaseLog::log($request, 'not found');
                     return $this->bookingResponse(404, 'not found', 'booking_item', '', Response::HTTP_NOT_FOUND);
                 }
 
@@ -368,6 +412,7 @@ class BookingController extends Controller
                         $item_data = Item::find($value['item_id']);
                         $amount = $item_data['amount'] - $value['amount'];
                         if ($amount < 0) {
+                            DatabaseLog::log($request, 'not enough item');
                             return $this->bookingResponse(202, 'not enough item', 'booking_item', '', Response::HTTP_NOT_FOUND);
                         }
                         $item_data->update(['amount' => $amount]);
@@ -396,11 +441,15 @@ class BookingController extends Controller
                     }
                 }
             }
+
+            DatabaseLog::log($request, 'successfully');
             return $this->bookingResponse(101, 'successfully', 'booking_item', $response, Response::HTTP_CREATED);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'booking_item', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical(': ' . $exception->getTraceAsString());
+            DatabaseLog::log($request, (string) $exception->getMessage());
             return $this->bookingResponse(500, (string) $exception->getMessage(), 'booking_item', '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

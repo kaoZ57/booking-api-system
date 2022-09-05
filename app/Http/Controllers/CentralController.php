@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Central;
+use App\Models\DatabaseLog;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -98,20 +99,46 @@ class CentralController extends Controller
       return view('dashboard', compact('response'));
     }
     $response = $response->api_key;
-    // $log =  DB::table('mysql.general_log')->where('argument', 'like', "%$response%")->orderBy('event_time', 'DESC')->get();
-    // dd($log);
-    // if (!$log) {
-    //   $log = array();
-    // }
-    return view('dashboard', compact('response'));
+
+    DB::connection('mysql');
+    config(['database.connections.mysql.database' => $response]);
+    DB::purge('mysql');
+    DB::reconnect('mysql');
+
+    $log =  DB::table('database_log')->orderBy('event_time', 'DESC')->get();
+
+    return view('dashboard', compact('response', 'log'));
   }
 
   public function test(Request $request)
   {
+    $api_key = strtolower($request->header('api_key'));
+
+    $data = DB::table('information_schema.TABLES')
+      ->where('table_schema', '=',  $api_key)
+      ->select('table_schema AS Database', 'data_length AS data_length', 'index_length AS index_length')
+      ->get();
+
+    $data_length = 0;
+    $index_length = 0;
+    foreach ($data as $value) {
+      $data_length += $value->data_length;
+    }
+    foreach ($data as $value) {
+      $index_length += $value->index_length;
+    }
+    $size = round(($data_length + $index_length) / 1024 / 1024, 2);
+    return $size;
+
+    // DB::connection('mysql');
+    // config(['database.connections.mysql.database' => $request->header('api_key')]);
+    // DB::purge('mysql');
+    // DB::reconnect('mysql');
+    // return DatabaseLog::all();
     $response = ([
       "event_time" => Carbon::now()->setTimezone('Asia/Bangkok'),
       "user_id" => 1,
-      "method" => 'POST',
+      "method" => $request->method(),
       "fullUrl" => $request->fullUrl(),
       "ipAddress" => $request->ip(),
       "request" => $request->collect(),

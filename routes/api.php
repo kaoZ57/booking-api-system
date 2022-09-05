@@ -26,19 +26,10 @@ use App\Http\Controllers\FilterController;
 
 
 
-Route::group(['prefix' => 'central'], function () {
-    Route::post('/create', [CentralController::class, 'store']);
+Route::post('central/test', [CentralController::class, 'test']);
 
-
-    Route::get('/', [CentralController::class, 'show']);
-    Route::post('/test', [CentralController::class, 'test']);
-});
 
 Route::group(['middleware' => ['manage']], function () {
-    // Route::post('tag/create_tag', [TagController::class, 'store']);
-    Route::get('/search_item', [FilterController::class, 'item_filter']);
-    Route::get('/search_booking', [FilterController::class, 'booking_filter']);
-    Route::get('/search_date', [FilterController::class, 'scopeStartsBetween']);
     //user authentication
     Route::group(['prefix' => 'auth'], function () {
         Route::post('/register', [AuthController::class, 'register']);

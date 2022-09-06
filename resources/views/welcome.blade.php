@@ -10,7 +10,7 @@
     <title>Booking API</title>
 </head>
 
-<body class="bg-gray-50" style="margin-top: 18%;">
+<body class="bg-gray-50" style="margin-top: 15%;">
 
     <!-- This example requires Tailwind CSS v2.0+ -->
     <div class="bg-gray-50">

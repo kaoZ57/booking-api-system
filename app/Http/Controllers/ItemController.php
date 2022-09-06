@@ -32,10 +32,12 @@ class ItemController extends Controller
                 'item' => 'required'
             ]);
 
-            foreach ($request->item['tag'] as  $value) {
-                if (!Tag::find($value['id'])) {
-                    DatabaseLog::log($request, 'not found');
-                    return $this->bookingResponse(404, 'not found', 'item', '', Response::HTTP_CREATED);
+            if ($request->item['tag']) {
+                foreach ($request->item['tag'] as  $value) {
+                    if (!Tag::find($value['id'])) {
+                        DatabaseLog::log($request, 'not found');
+                        return $this->bookingResponse(404, 'not found', 'item', '', Response::HTTP_CREATED);
+                    }
                 }
             }
 

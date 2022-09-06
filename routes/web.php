@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CentralController;
+use App\Http\Controllers\Graph\GraphController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -25,5 +27,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [CentralController::class, 'index'])->name('dashboard');
     Route::post('/signin', [CentralController::class, 'signin'])->name('sign.in');
 });
+
+Route::get('larachart', [GraphController::class, 'lineChart']);
 
 require __DIR__ . '/auth.php';

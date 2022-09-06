@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Khill\Lavacharts\Lavacharts;
+use App\Http\Controllers\Graph\GraphController;
 
 class CentralController extends Controller
 {
@@ -107,7 +109,36 @@ class CentralController extends Controller
 
     $log =  DB::table('database_log')->orderBy('event_time', 'DESC')->get();
 
-    return view('dashboard', compact('response', 'log'));
+    $data = DatabaseLog::select(array(DB::raw('COUNT(id)'), 'method'))->groupBy('method')->get()->toArray();
+    // dd($data);
+
+    $lava = new Lavacharts;
+
+    $datatable = $lava->DataTable();
+    $datatable->addStringColumn('Name');
+    $datatable->addNumberColumn('Method Donuts Eaten');
+
+    foreach ($data as  $value) {
+      $datatable->addRow([$value['method'], $value['COUNT(id)']]);
+    }
+
+    $pieChart = $lava->PieChart('Donuts', $datatable, [
+      'width' => 400,
+      'pieSliceText' => 'value'
+    ]);
+
+    $filter  = $lava->NumberRangeFilter(1, [
+      'ui' => [
+        'labelStacking' => 'vertical'
+      ]
+    ]);
+
+    $control = $lava->ControlWrapper($filter, 'control');
+    $chart   = $lava->ChartWrapper($pieChart, 'chart');
+
+    $lava->Dashboard('Donuts', $datatable)->bind($control, $chart);
+
+    return view('dashboard', compact('response', 'log', 'lava'));
   }
 
   public function test(Request $request)

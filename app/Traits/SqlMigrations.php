@@ -316,7 +316,7 @@ trait SqlMigrations
       `ipAddress` varchar(255) NOT NULL,
       `request` varchar(999) NOT NULL,
       `message` varchar(255) NOT NULL,
-      `size_MB` varchar(255) NOT NULL,
+      `size_MB` float NOT NULL,
       PRIMARY KEY (`id`)
     ) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8;";
 

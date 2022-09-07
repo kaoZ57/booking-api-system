@@ -59,27 +59,67 @@
         </div>
 
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <br>
+            @isset($lava1)
+                <br>
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg ">
+                        <div class="flex-md-grow-1 items-stretch ">
 
-            @isset($lava)
-                <div id="my-dash">
-                    <div id="chart">
-                    </div>
-                    <div id="control">
+                            <div id="pop_div"></div>
+                            <?= $lava1->render('AreaChart', 'Population', 'pop_div') ?>
+
+                            <div id="temps_div"></div>
+                            <?= $lava->render('LineChart', 'Temps', 'temps_div') ?>
+                        </div>
                     </div>
                 </div>
-                <?= $lava->render('Dashboard', 'Donuts', 'my-dash') ?>
             @endisset
+        </div>
 
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @isset($lava1)
+                <br>
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg ">
+                        <div class="flex-md-grow-1 items-stretch ">
+                            <div id="pop_div"></div>
+                            <?= $lava1->render('AreaChart', 'Population', 'pop_div') ?>
+                        </div>
+                    </div>
+                </div>
+            @endisset
+        </div>
+
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @isset($lava)
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg ">
+                        <div class="flex-md-grow-1 items-stretch ">
+                            <div id="temps_div"></div>
+                            <?= $lava->render('LineChart', 'Temps', 'temps_div') ?>
+                        </div>
+                    </div>
+                </div>
+            @endisset
+        </div>
+
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             @isset($log)
                 @if ($log)
-                    <br>
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="md:col-span-1">
                             <div class="px-4 sm:px-0">
                                 <br>
-                                <h3 class="text-lg font-medium leading-6 text-gray-900" style="font-size: 20px">Log Count
+                                <h3 class="text-lg font-medium leading-6 text-gray-900" style="font-size: 20px">Log
+                                    Count
                                     {{ Count($log) }} </h3>
+                                <br>
+                            </div>
+                            <div class="px-4 sm:px-0">
+                                <br>
+                                <h3 class="text-lg font-medium leading-6 text-gray-900" style="font-size: 20px">Last 100
+                                    record
+                                    usage data</h3>
                                 <br>
                             </div>
                             <div class="overflow-x-auto relative shadow-md sm:rounded-lg">
@@ -91,7 +131,7 @@
                                                 event_time
                                             </th>
                                             <th scope="col" class="py-3 px-6 ">
-                                                user_id
+                                                user
                                             </th>
                                             <th scope="col" class="py-3 px-6 ">
                                                 method
@@ -121,7 +161,7 @@
                                                     {{ $v->event_time }}
                                                 </th>
                                                 <td class="py-4 px-6 text-gray-700">
-                                                    {{ $v->user_id }}
+                                                    {{ $v->name }}
                                                 </td>
 
                                                 @if ($v->method == 'GET')

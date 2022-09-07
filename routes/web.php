@@ -28,6 +28,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/signin', [CentralController::class, 'signin'])->name('sign.in');
 });
 
-Route::get('larachart', [GraphController::class, 'lineChart']);
+Route::get('larachart', [GraphController::class, 'lineChart2']);
 
 require __DIR__ . '/auth.php';

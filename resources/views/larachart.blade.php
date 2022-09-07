@@ -11,8 +11,9 @@
 
 <body>
     <div class="container">
-        <div id="poll_div"></div>
-        {!! $lava->render('BarChart', 'Votes', 'poll_div') !!}
+        <div id="temps_div"></div>
+        // With the lava object
+        <?= $lava->render('LineChart', 'Temps', 'temps_div') ?>
     </div>
 
 </body>

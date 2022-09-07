@@ -107,38 +107,25 @@ class CentralController extends Controller
     DB::purge('mysql');
     DB::reconnect('mysql');
 
-    $log =  DB::table('database_log')->orderBy('event_time', 'DESC')->get();
+    // $log =  DB::table('database_log')->orderBy('event_time', 'DESC')->get();
+    $log =  DB::table('database_log')
+      ->join('users', 'users.id', '=', 'database_log.user_id')
+      ->orderBy('event_time', 'DESC')
+      ->select('database_log.*', 'users.name')
+      ->get();
 
-    $data = DatabaseLog::select(array(DB::raw('COUNT(id)'), 'method'))->groupBy('method')->get()->toArray();
-    // dd($data);
+    // temperatures
+    $lava = GraphController::temperatures();
 
-    $lava = new Lavacharts;
+    //population
+    $lava1 = GraphController::population();
 
-    $datatable = $lava->DataTable();
-    $datatable->addStringColumn('Name');
-    $datatable->addNumberColumn('Method Donuts Eaten');
+    //rendering
+    // $lava2 = GraphController::rendering();
 
-    foreach ($data as  $value) {
-      $datatable->addRow([$value['method'], $value['COUNT(id)']]);
-    }
+    // $lava = GraphController::all();
 
-    $pieChart = $lava->PieChart('Donuts', $datatable, [
-      'width' => 400,
-      'pieSliceText' => 'value'
-    ]);
-
-    $filter  = $lava->NumberRangeFilter(1, [
-      'ui' => [
-        'labelStacking' => 'vertical'
-      ]
-    ]);
-
-    $control = $lava->ControlWrapper($filter, 'control');
-    $chart   = $lava->ChartWrapper($pieChart, 'chart');
-
-    $lava->Dashboard('Donuts', $datatable)->bind($control, $chart);
-
-    return view('dashboard', compact('response', 'log', 'lava'));
+    return view('dashboard', compact('response', 'log', 'lava', 'lava1'));
   }
 
   public function test(Request $request)

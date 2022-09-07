@@ -61,7 +61,11 @@ Route::group(['middleware' => ['manage']], function () {
                 Route::get('/get_all', [OutOfServiceController::class, 'show']);
                 Route::patch('/update', [OutOfServiceController::class, 'update']);
             });
-            Route::post('stock/add_item_to_stock', [StockController::class, 'store']);
+            Route::group(['prefix' => 'stock'], function () {
+                Route::post('add_item_to_stock', [StockController::class, 'store']);
+                Route::get('/get_all', [StockController::class, 'show']);
+            });
+
             Route::patch('booking/update_items_by_staff', [BookingController::class, 'update_items_by_staff']);
         });
 

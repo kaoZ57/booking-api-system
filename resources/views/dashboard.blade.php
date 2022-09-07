@@ -114,7 +114,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($log as $v)
+                                        @foreach ($log->take(100) as $v)
                                             <tr class="bg-white border-b ">
                                                 <th scope="row"
                                                     class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap text-gray-700">
@@ -137,7 +137,7 @@
                                                 </td>
 
                                                 <td class="py-4 px-6 text-gray-700">
-                                                    {{ $v->fullUrl }}
+                                                    {{ Str::limit($v->fullUrl, 70) }}
                                                 </td>
                                                 <td class="py-4 px-6 text-gray-700">
                                                     {{ $v->ipAddress }}

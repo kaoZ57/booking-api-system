@@ -173,10 +173,10 @@ class FilterController extends Controller
             $bookings->where('users_id', "=", $request->filter['users_id']);
         }
         if ($request->has('filter.start_date')) {
-            $bookings->where('start_date', "=", $request->filter['start_date']);
+            $bookings->whereDate('start_date', "=", $request->filter['start_date']);
         }
         if ($request->has('filter.end_date')) {
-            $bookings->where('end_date', "=", $request->filter['end_date']);
+            $bookings->whereDate('end_date', "=", $request->filter['end_date']);
         }
         if ($request->has('filter.verify_date')) {
             $bookings->where('verify_date', "=", $request->filter['verify_date']);
@@ -219,7 +219,7 @@ class FilterController extends Controller
             $stocks->where('id', "=", $request->filter['stock_id']);
         }
         if ($request->has('filter.start_date')) {
-            $stocks->where('updated_at', "=", $request->filter['start_date']);
+            $stocks->whereDate('updated_at', "=", $request->filter['start_date']);
         }
         if ($request->has('filter.between')) {
             $start_date =  substr($request->filter['between'], 10);

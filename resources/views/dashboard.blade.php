@@ -11,6 +11,7 @@
                 <div class="md:grid md:grid-cols-3 md:gap-6">
                     <div class="md:col-span-1">
                         <div class="px-4 sm:px-0">
+                            <br>
                             <h3 class="text-lg font-medium leading-6 text-gray-900">ระบบบริการ API</h3>
                         </div>
                     </div>
@@ -20,10 +21,12 @@
                             <div class="overflow-hidden shadow sm:rounded-md">
                                 @if ($response)
                                     <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 ">
-                                        <dt class="text-sm font-medium text-gray-500">กรุณาเก็บรหัสไว้ให้ดี</dt>
+                                        <dt class="text-sm font-medium text-gray-500">กรุณาเก็บรหัสไว้ให้ดี รหัส owner
+                                            แรกของระบบคุณจะใช้ email และ password ที่ล็อกอินในเว็บนี้</dt>
                                         <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
                                             API KEY = {{ $response }}
                                         </dd>
+                                        <br>
                                     </div>
                                 @else
                                     <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">

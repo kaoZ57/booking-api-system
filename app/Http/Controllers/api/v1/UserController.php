@@ -424,8 +424,29 @@ class UserController extends Controller
                 DatabaseLog::log($request, 'not found');
                 return $this->authResponse(404, 'not found', Response::HTTP_NOT_FOUND);
             }
+
+            $roles = array();
+
+            foreach ($user->roles as $value) {
+
+                $role = ([
+                    "id" => $value->id,
+                    "name" => $value->name,
+                ]);
+                array_push($roles, $role);
+            }
+
+            $response = ([
+                "id" => $user->id,
+                "name" => $user->name,
+                "email" => $user->email,
+                "created_at" => $user->created_at,
+                "updated_at" => $user->updated_at,
+                "roles" => $roles,
+
+            ]);
             DatabaseLog::log($request, 'successfully');
-            return $this->bookingResponse(101, 'successfully', 'user', $user, Response::HTTP_OK);
+            return $this->bookingResponse(101, 'successfully', 'user', $response, Response::HTTP_OK);
         } catch (QueryException $exception) {
             DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'user', '', Response::HTTP_UNPROCESSABLE_ENTITY);

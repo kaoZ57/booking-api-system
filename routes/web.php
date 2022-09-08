@@ -24,7 +24,8 @@ Route::get('/', function () {
 // })->middleware(['auth'])->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [CentralController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [CentralController::class, 'dashboard'])->name('dashboard');
+    Route::get('/admin_dashboard', [CentralController::class, 'admin_dashboard'])->name('admin_dashboard');
     Route::post('/signin', [CentralController::class, 'signin'])->name('sign.in');
 });
 

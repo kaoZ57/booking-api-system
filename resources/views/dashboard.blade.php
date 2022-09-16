@@ -119,7 +119,7 @@
                                 <br>
                                 <h3 class="text-lg font-medium leading-6 text-gray-900" style="font-size: 20px">Log
                                     Count
-                                    {{ Count($log) }} </h3>
+                                    {{ $logCount }} </h3>
                                 <br>
                             </div>
                             <div class="px-4 sm:px-0">

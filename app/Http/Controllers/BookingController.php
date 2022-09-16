@@ -175,20 +175,25 @@ class BookingController extends Controller
                 'booking' => 'required',
             ]);
 
-            $status = Status::where("table_name", "=", "booking")->get();
             $booking = Booking::find($request->booking['id']);
+            $status = Status::where("table_name", "=", "booking")->where("id", "=", $booking['status_id'])->first();
+
             if (!$booking) {
                 DatabaseLog::log($request, 'not found');
                 return $this->bookingResponse(404, 'not found', 'booking', '', Response::HTTP_NOT_FOUND);
             }
             if ($booking->status_id != 1) {
-                DatabaseLog::log($request, 'can not edit');
-                return $this->bookingResponse(212, 'can not edit, booking is pending status', 'booking', '', Response::HTTP_NOT_FOUND);
+                DatabaseLog::log($request, 'can not edit, booking is ' . substr($status['name'], 4) . ' status');
+                return $this->bookingResponse(212, 'can not edit, booking is ' . substr($status['name'], 4) . ' status', 'booking', '', Response::HTTP_NOT_FOUND);
             }
-            if ($request->booking['start_date'] <  Carbon::now()->setTimezone('Asia/Bangkok') || $request->booking['end_date'] <  Carbon::now()->setTimezone('Asia/Bangkok') || $request->booking['start_date'] > $request->booking['end_date']) {
+            if ($request->booking['end_date'] <  Carbon::now()->setTimezone('Asia/Bangkok') || $request->booking['start_date'] > $request->booking['end_date']) {
                 DatabaseLog::log($request, 'invalid date');
                 return $this->bookingResponse(203, 'invalid date', 'booking', '',  Response::HTTP_NOT_FOUND);
             }
+            // if ($request->booking['start_date'] <  Carbon::now()->setTimezone('Asia/Bangkok') || $request->booking['end_date'] <  Carbon::now()->setTimezone('Asia/Bangkok') || $request->booking['start_date'] > $request->booking['end_date']) {
+            //     DatabaseLog::log($request, 'invalid date');
+            //     return $this->bookingResponse(203, 'invalid date', 'booking', '',  Response::HTTP_NOT_FOUND);
+            // }
             if ($booking['users_id'] != Auth::user()->id) {
                 DatabaseLog::log($request, 'you are not owner');
                 return $this->bookingResponse(207, 'you are not owner', 'booking', '', Response::HTTP_NOT_FOUND);
@@ -204,15 +209,15 @@ class BookingController extends Controller
                 'status_id' => $request->booking['status_id'],
             ]);
 
-            $response = ([
-                'start_date' => $booking['start_date'],
-                'end_date' => $booking['end_date'],
-                'status_id' => $booking['status_id'],
-                'status' =>  substr($status[$booking['status_id'] - 1]->name, 4)
-            ]);
+            // $response = ([
+            //     'start_date' => $booking['start_date'],
+            //     'end_date' => $booking['end_date'],
+            //     'status_id' => $booking['status_id'],
+            //      'status' =>  substr(Status::find($booking['status_id'])->name, 4)
+            // ]);
 
             DatabaseLog::log($request, 'successfully');
-            return $this->bookingResponse(101, 'successfully', 'booking', $response, Response::HTTP_CREATED);
+            return $this->bookingResponse(101, 'successfully', 'booking', $booking, Response::HTTP_CREATED);
         } catch (QueryException $exception) {
             DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'booking', '', Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -232,6 +237,12 @@ class BookingController extends Controller
 
             foreach ($request->booking_item as $value) {
                 $booking = Booking::find($value['booking_id']);
+                $booking_item = Booking_Item::where('item_id', '=', $value['item_id'])->where('booking_id', '=', $value['booking_id'])->first();
+                // return $this->bookingResponse(777, '77', '777', $booking_item,  Response::HTTP_NOT_FOUND);
+                if ($booking_item) {
+                    DatabaseLog::log($request, 'item is duplicate');
+                    return $this->bookingResponse(204, 'item is duplicate', 'booking', '',  Response::HTTP_NOT_FOUND);
+                }
                 if (!$booking) {
                     DatabaseLog::log($request, 'not found');
                     return $this->bookingResponse(404, 'not found', 'booking', '',  Response::HTTP_NOT_FOUND);
@@ -305,6 +316,10 @@ class BookingController extends Controller
                     DatabaseLog::log($request, 'can not edit, you are already confirm booking');
                     return $this->bookingResponse(214, 'can not edit, you are already confirm booking', 'booking', '', Response::HTTP_NOT_FOUND);
                 }
+                if ($booking['status_id'] == 3) {
+                    DatabaseLog::log($request, 'can not edit, booking is approve');
+                    return $this->bookingResponse(215, 'can not edit, booking is approve', 'booking', '', Response::HTTP_NOT_FOUND);
+                }
                 if ($booking['status_id'] == 4) {
                     DatabaseLog::log($request, 'can not edit,booking is completed');
                     return $this->bookingResponse(215, 'can not edit,booking is completed', 'booking', '', Response::HTTP_NOT_FOUND);
@@ -349,18 +364,32 @@ class BookingController extends Controller
                 'booking_item' => 'required',
             ]);
 
+            $request_booking_item = $request->booking_item;
             $statusBooking_item = Status::where("table_name", "=", "booking_item")->get();
-            foreach ($request->booking_item as $value) {
+            foreach ($request_booking_item as $key => $value) {
+                $booking_item = Booking_Item::find($value['id']);
+                $booking = Booking::find($booking_item['booking_id']);
+
                 if (!$statusBooking_item->find($value['status_id'])) {
                     DatabaseLog::log($request, 'invalid status');
                     return $this->bookingResponse(204, 'invalid status', 'booking_item', '', Response::HTTP_NOT_FOUND);
+                }
+
+                if ($value['status_id'] <= 4  || $value['status_id'] >= 8  && $booking['status_id'] == 2) {
+                    DatabaseLog::log($request, 'can not edit, booking is pending');
+                    return $this->bookingResponse(204, 'can not edit, booking is pending', 'booking_item', '', Response::HTTP_NOT_FOUND);
+                }
+
+                if ($value['status_id'] <= 6  && $booking['status_id'] == 3) {
+                    DatabaseLog::log($request, 'can not edit, booking is approve');
+                    return $this->bookingResponse(204, 'can not edit, booking is approve', 'booking_item', '', Response::HTTP_NOT_FOUND);
                 }
             }
 
             $response = array();
             $status = array();
 
-            foreach ($request->booking_item as $value) {
+            foreach ($request_booking_item as $value) {
                 $booking_item = Booking_Item::find($value['id']);
 
                 $booking = Booking::find($booking_item['booking_id']);
@@ -380,18 +409,26 @@ class BookingController extends Controller
                     DatabaseLog::log($request, 'not found');
                     return $this->bookingResponse(404, 'not found', 'booking_item', '', Response::HTTP_NOT_FOUND);
                 }
-
+                // return $this->bookingResponse(777, 'true', 'true', 'true', Response::HTTP_NOT_FOUND);
                 $booking_item->update([
                     'status_id' => $value['status_id'],
                     'note_owner' => $value['note_owner'],
                     'updated_by' => Auth::user()->id,
                 ]);
                 array_push($response, $booking_item);
-                array_push($status, $value['status_id']);
-            }
 
+                array_push($status, $booking_item['status_id']);
+            }
+            $isStatus = true;
+            // return $this->bookingResponse(777, '', 'booking_item', $status, Response::HTTP_NOT_FOUND);
             //เช็คหาสถานพทั้งหมดว่าเหมือนกันไหม
+            // foreach ($status as $key => $value) {
+            //     if ($value == 5 || $value == 9) {
+            //         unset($status[$key]);
+            //     }
+            // }
             foreach ($status as $value) {
+
                 if ($status[0] != $value) {
                     $isStatus = false;
                     break;
@@ -401,13 +438,14 @@ class BookingController extends Controller
 
             if ($isStatus) {
                 if ($status[0] == 5) {
-                    $booking->update(['status_id' => 4]);
+                    $booking->update(['status_id' => 4, 'verify_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
                 }
                 if ($status[0] == 6) {
                     $booking->update(['status_id' => 2]);
                 }
                 if ($status[0] == 7) {
-                    $booking_return = Booking_Item::where("booking_id", "=", $booking['id'])->get();
+                    $booking_return = Booking_Item::where("booking_id", "=", $booking['id'])->where("status_id", "!=", 5)->get();
+                    // return $this->bookingResponse(777, '', 'booking_item', $booking_return, Response::HTTP_NOT_FOUND);
                     foreach ($booking_return as $value) {
                         $item_data = Item::find($value['item_id']);
                         $amount = $item_data['amount'] - $value['amount'];
@@ -422,6 +460,10 @@ class BookingController extends Controller
                         $item_data = Item::find($value['item_id']);
                         if ($item_data['is_not_return'] == 1) {
                             $value->update(['status_id' => 9, 'return_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
+                            // if (count($status) == 1) {
+                            //     $booking->update(['status_id' => 4]);
+                            //     return $this->bookingResponse(101, 'successfully', 'booking_item', $response, Response::HTTP_CREATED);
+                            // }
                         }
                     }
                     $booking->update(['status_id' => 3, 'verify_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
@@ -431,7 +473,7 @@ class BookingController extends Controller
                 }
                 if ($status[0] == 9) {
                     $booking->update(['status_id' => 4]);
-                    $booking_return = Booking_Item::where("booking_id", "=", $booking['id'])->get();
+                    $booking_return = Booking_Item::where("booking_id", "=", $booking['id'])->where("status_id", "!=", 4)->get();
                     foreach ($booking_return as $value) {
                         $value->update(['return_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
                     }

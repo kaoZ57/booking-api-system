@@ -32,6 +32,12 @@ class ItemController extends Controller
                 'item' => 'required'
             ]);
 
+            $store = Store::find($request->item['store_id']);
+            if (!$store) {
+                DatabaseLog::log($request, "not found");
+                return $this->bookingResponse(404, 'not found', 'store', $store, Response::HTTP_NOT_FOUND);
+            };
+
             if ($request->item['tag']) {
                 foreach ($request->item['tag'] as  $value) {
                     if (!Tag::find($value['id'])) {
@@ -175,7 +181,7 @@ class ItemController extends Controller
                 'name' => $request->item['name'],
                 'description' => $request->item['description'],
                 'is_active' => $request->item['is_active'],
-                'is_not_return' => $request->item['is_not_return']
+                // 'is_not_return' => $request->item['is_not_return']
             ]);
 
             $item_tag = Tag_Item::where('item_id', '=', $request->item['id'])->get();

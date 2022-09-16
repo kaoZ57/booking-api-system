@@ -19,10 +19,12 @@ trait SqlMigrations
     // $hashed_password = password_hash(Auth::user()->id, PASSWORD_ARGON2ID);
     // $hashed_password = substr(password_hash(Auth::user()->id, PASSWORD_ARGON2ID), 33);
 
+    $id =  Auth::user()->id;
     $key =  Auth::user()->create_at;
     $salt = 'Rajamangala University of Technology IsanRajamangala University of Technology Isan CS#13 Booking API System';
-    $hashed_password = password_hash($salt . $key, PASSWORD_BCRYPT, ['memory_cost' => 2048, 'time_cost' => 4, 'threads' => 3]);
-    // $hashed_password = hash('sha256', $salt . $key);
+    // $hashed_password = password_hash($salt . $key, PASSWORD_BCRYPT, ['memory_cost' => 2048, 'time_cost' => 4, 'threads' => 3]);
+    $hashed_password = hash('sha256', $salt . $key . $id);
+    // dd($hashed_password);
     return $hashed_password;
   }
 

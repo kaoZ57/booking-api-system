@@ -28,58 +28,60 @@ use App\Http\Controllers\FilterController;
 
 Route::post('central/test', [CentralController::class, 'test']);
 
+Route::group(['prefix' => 'v1'], function () {
+    Route::group(['middleware' => ['manage']], function () {
+        //user authentication
+        Route::group(['prefix' => 'auth'], function () {
+            Route::post('/register', [AuthController::class, 'register']);
+            Route::post('/login', [AuthController::class, 'login']);
+            Route::group(['middleware' => ['authenticateSanctum']], function () {
+                Route::post('/logout', [AuthController::class, 'logout']);
+            });
+        });
 
-Route::group(['middleware' => ['manage']], function () {
-    //user authentication
-    Route::group(['prefix' => 'auth'], function () {
-        Route::post('/register', [AuthController::class, 'register']);
-        Route::post('/login', [AuthController::class, 'login']);
         Route::group(['middleware' => ['authenticateSanctum']], function () {
-            Route::post('/logout', [AuthController::class, 'logout']);
-        });
-    });
 
-    Route::group(['middleware' => ['authenticateSanctum']], function () {
-
-        Route::group(['middleware' => ['isOwner']], function () {
-            Route::patch('store/update_store', [StoreController::class, 'update']);
-            Route::get('user/get_all', [UserController::class, 'show_all']);
-            Route::post('user/assign_staff', [UserController::class, 'assign_staff']);
-        });
-
-        Route::group(['middleware' => ['isStaff']], function () {
-            Route::group(['prefix' => 'tag'], function () {
-                Route::post('create_tag', [TagController::class, 'store']);
-                Route::patch('update_tag', [TagController::class, 'update']);
-            });
-            Route::group(['prefix' => 'item'], function () {
-                Route::patch('/update_item', [ItemController::class, 'update']);
-                Route::post('/create_item', [ItemController::class, 'store']);
-            });
-            Route::group(['prefix' => 'out_of_service'], function () {
-                Route::post('/add_item', [OutOfServiceController::class, 'store']);
-                Route::get('/get_all', [OutOfServiceController::class, 'show']);
-                Route::patch('/update', [OutOfServiceController::class, 'update']);
-            });
-            Route::group(['prefix' => 'stock'], function () {
-                Route::post('add_item_to_stock', [StockController::class, 'store']);
-                Route::get('/get_all', [StockController::class, 'show']);
+            Route::group(['middleware' => ['isOwner']], function () {
+                Route::patch('store/update_store', [StoreController::class, 'update']);
+                // Route::get('user/get_all', [UserController::class, 'show_all']);
+                Route::post('user/assign_staff', [UserController::class, 'assign_staff']);
             });
 
-            Route::patch('booking/update_items_by_staff', [BookingController::class, 'update_items_by_staff']);
-        });
+            Route::group(['middleware' => ['isStaff']], function () {
+                Route::group(['prefix' => 'tag'], function () {
+                    Route::post('create_tag', [TagController::class, 'store']);
+                    Route::patch('update_tag', [TagController::class, 'update']);
+                });
+                Route::group(['prefix' => 'item'], function () {
+                    Route::patch('/update_item', [ItemController::class, 'update']);
+                    Route::post('/create_item', [ItemController::class, 'store']);
+                });
+                Route::group(['prefix' => 'out_of_service'], function () {
+                    Route::post('/add_item', [OutOfServiceController::class, 'store']);
+                    Route::get('/get_all', [OutOfServiceController::class, 'show']);
+                    Route::patch('/update', [OutOfServiceController::class, 'update']);
+                });
+                Route::group(['prefix' => 'stock'], function () {
+                    Route::post('add_item_to_stock', [StockController::class, 'store']);
+                    Route::get('/get_all', [StockController::class, 'show']);
+                });
 
-        Route::group(['middleware' => ['isCustomer']], function () {
-            Route::get('user/get_current', [UserController::class, 'show_current']);
-            Route::get('store/get_store', [StoreController::class, 'show']);
-            Route::get('tag/get_tags', [TagController::class, 'show']);
-            Route::get('item/get_items', [ItemController::class, 'show']);
-            Route::group(['prefix' => 'booking'], function () {
-                Route::post('/create_booking', [BookingController::class, 'store']);
-                Route::get('/get_bookings', [BookingController::class, 'show']);
-                Route::patch('/update_booking', [BookingController::class, 'update_booking']);
-                Route::post('/add_items', [BookingController::class, 'add_items']);
-                Route::patch('/update_items_by_customer', [BookingController::class, 'update_items_by_customer']);
+                Route::patch('booking/update_items_by_staff', [BookingController::class, 'update_items_by_staff']);
+            });
+
+            Route::group(['middleware' => ['isCustomer']], function () {
+                Route::get('user/get_all', [UserController::class, 'show_all']);
+                Route::get('user/get_current', [UserController::class, 'show_current']);
+                Route::get('store/get_store', [StoreController::class, 'show']);
+                Route::get('tag/get_tags', [TagController::class, 'show']);
+                Route::get('item/get_items', [ItemController::class, 'show']);
+                Route::group(['prefix' => 'booking'], function () {
+                    Route::post('/create_booking', [BookingController::class, 'store']);
+                    Route::get('/get_bookings', [BookingController::class, 'show']);
+                    Route::patch('/update_booking', [BookingController::class, 'update_booking']);
+                    Route::post('/add_items', [BookingController::class, 'add_items']);
+                    Route::patch('/update_items_by_customer', [BookingController::class, 'update_items_by_customer']);
+                });
             });
         });
     });

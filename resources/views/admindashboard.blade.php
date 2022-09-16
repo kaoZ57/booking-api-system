@@ -13,6 +13,9 @@
                     <thead class="text-xs text-gray-700  text-gray-900 dark:border-gray-700" style="font-size: 18px">
                         <tr>
                             <th scope="col" class="py-3 px-6 ">
+                                number
+                            </th>
+                            <th scope="col" class="py-3 px-6 ">
                                 owner
                             </th>
                             {{-- <th scope="col" class="py-3 px-6 ">
@@ -27,28 +30,36 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($response as $v)
+                        <?php $i = 1; ?>
+                        @foreach ($central as $v)
                             <tr class="bg-white border-b ">
+                                <td class="py-4 px-6 text-gray-700" style="width: 1%">
+                                    <center> {{ $i++ }}
+                                </td>
                                 <th scope="row"
-                                    class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap text-gray-700">
-                                    {{ $v->name }}
+                                    class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap text-gray-700"
+                                    style="width: 1%">
+                                    <center> {{ $v->name }}
                                 </th>
                                 {{-- <td class="py-4 px-6 text-gray-700">
                                         {{ $v->api_key }}
                                     </td> --}}
                                 <td class="py-4 px-6 text-gray-700">
-                                    {{ $v->created_at }}
+                                    <center> {{ $v->created_at }}
                                 </td>
                                 <td class="py-4 px-6 text-gray-700">
-                                    {{ $v->updated_at }}
+                                    <center> {{ $v->updated_at }}
                                 </td>
+                                <td class="py-4 px-6 text-gray-700">
+                                    <center> {{ $v->size }}
+                                </td>
+
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
-
             </div>
         </div>
-
+    </div>
 
 </x-app-layout>

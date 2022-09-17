@@ -409,7 +409,7 @@ class BookingController extends Controller
                     DatabaseLog::log($request, 'not found');
                     return $this->bookingResponse(404, 'not found', 'booking_item', '', Response::HTTP_NOT_FOUND);
                 }
-                // return $this->bookingResponse(777, 'true', 'true', 'true', Response::HTTP_NOT_FOUND);
+                // return $this->bookingResponse(777, 'true', 'true', $value['status_id'], Response::HTTP_NOT_FOUND);
                 $booking_item->update([
                     'status_id' => $value['status_id'],
                     'note_owner' => $value['note_owner'],
@@ -419,74 +419,7 @@ class BookingController extends Controller
 
                 array_push($status, $booking_item['status_id']);
             }
-            $isStatus = true;
-            // return $this->bookingResponse(777, '', 'booking_item', $status, Response::HTTP_NOT_FOUND);
-            //เช็คหาสถานพทั้งหมดว่าเหมือนกันไหม
-            // foreach ($status as $key => $value) {
-            //     if ($value == 5 || $value == 9) {
-            //         unset($status[$key]);
-            //     }
-            // }
-            foreach ($status as $value) {
 
-                if ($status[0] != $value) {
-                    $isStatus = false;
-                    break;
-                }
-                $isStatus = true;
-            }
-
-            if ($isStatus) {
-                if ($status[0] == 5) {
-                    $booking->update(['status_id' => 4, 'verify_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
-                }
-                if ($status[0] == 6) {
-                    $booking->update(['status_id' => 2]);
-                }
-                if ($status[0] == 7) {
-                    $booking_return = Booking_Item::where("booking_id", "=", $booking['id'])->where("status_id", "!=", 5)->get();
-                    // return $this->bookingResponse(777, '', 'booking_item', $booking_return, Response::HTTP_NOT_FOUND);
-                    foreach ($booking_return as $value) {
-                        $item_data = Item::find($value['item_id']);
-                        $amount = $item_data['amount'] - $value['amount'];
-                        if ($amount < 0) {
-                            DatabaseLog::log($request, 'not enough item');
-                            return $this->bookingResponse(202, 'not enough item', 'booking_item', '', Response::HTTP_NOT_FOUND);
-                        }
-                        $item_data->update(['amount' => $amount]);
-                    }
-
-                    foreach ($booking_return as $value) {
-                        $item_data = Item::find($value['item_id']);
-                        if ($item_data['is_not_return'] == 1) {
-                            $value->update(['status_id' => 9, 'return_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
-                            // if (count($status) == 1) {
-                            //     $booking->update(['status_id' => 4]);
-                            //     return $this->bookingResponse(101, 'successfully', 'booking_item', $response, Response::HTTP_CREATED);
-                            // }
-                        }
-                    }
-                    $booking->update(['status_id' => 3, 'verify_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
-                }
-                if ($status[0] == 8) {
-                    $booking->update(['status_id' => 3]);
-                }
-                if ($status[0] == 9) {
-                    $booking->update(['status_id' => 4]);
-                    $booking_return = Booking_Item::where("booking_id", "=", $booking['id'])->where("status_id", "!=", 4)->get();
-                    foreach ($booking_return as $value) {
-                        $value->update(['return_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
-                    }
-                    foreach ($booking_return as $value) {
-                        $item_data = Item::find($value['item_id']);
-                        if ($item_data['is_not_return'] == 1) {
-                            continue;
-                        } else {
-                            $item_data->update(['amount' => $item_data['amount'] + $value['amount']]);
-                        }
-                    }
-                }
-            }
 
             DatabaseLog::log($request, 'successfully');
             return $this->bookingResponse(101, 'successfully', 'booking_item', $response, Response::HTTP_CREATED);

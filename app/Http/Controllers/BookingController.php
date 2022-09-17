@@ -387,7 +387,6 @@ class BookingController extends Controller
             }
 
             $response = array();
-            $status = array();
 
             foreach ($request_booking_item as $value) {
                 $booking_item = Booking_Item::find($value['id']);
@@ -410,16 +409,74 @@ class BookingController extends Controller
                     return $this->bookingResponse(404, 'not found', 'booking_item', '', Response::HTTP_NOT_FOUND);
                 }
                 // return $this->bookingResponse(777, 'true', 'true', $value['status_id'], Response::HTTP_NOT_FOUND);
-                $booking_item->update([
-                    'status_id' => $value['status_id'],
-                    'note_owner' => $value['note_owner'],
-                    'updated_by' => Auth::user()->id,
-                ]);
+                // $booking_item->update([
+                //     'status_id' => $value['status_id'],
+                //     'note_owner' => $value['note_owner'],
+                //     'updated_by' => Auth::user()->id,
+                // ]);
+                // $item_data = Item::find($booking_item['item_id']);
+                // if ($item_data['is_not_return'] == 1) {
+                //     $booking_item->update(['status_id' => 9, 'return_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
+                // }
                 array_push($response, $booking_item);
-
-                array_push($status, $booking_item['status_id']);
             }
 
+            $booking_item = Booking_Item::where('booking_id', '=', $response[0]->booking_id)
+                ->where('status_id', '!=', 5)
+                ->where('status_id', '!=', 9)
+                ->get();
+
+            $booking_item_status = Booking_Item::where('booking_id', '=', $response[0]->booking_id)
+                ->get();
+
+            $status = array();
+            foreach ($booking_item as $key => $value) {
+                array_push($status, $value['status_id']);
+            }
+            // return $this->bookingResponse('9', '9', '9', $status, Response::HTTP_CREATED);
+
+            $item_status = array();
+            foreach ($booking_item_status as $key => $value) {
+                array_push($item_status, $value['status_id']);
+            }
+            // return $this->bookingResponse('9', '9', '9', $item_status, Response::HTTP_CREATED);
+
+            $isStatus = false;
+            //เช็คหาสถานพทั้งหมดว่าเหมือนกันไหม
+            foreach ($status as $value) {
+                if ($status[0] != $value) {
+                    $isStatus = false;
+                    break;
+                }
+                $isStatus = true;
+            }
+
+            if (array_sum($item_status) / $item_status[0]  == count($item_status) && $item_status[0] == 5) { //เช็คหาสถานพทั้งหมดว่าเหมือน 5 
+                $booking->update(['status_id' => 4]);
+            } elseif (array_sum($item_status) / $item_status[0]  == count($item_status) && $item_status[0] == 9) { //เช็คหาสถานพทั้งหมดว่าเหมือน 9
+                $booking->update(['status_id' => 4]);
+            } elseif ($isStatus) { //เช็คหาสถานพทั้งหมดว่าเหมือนกันไหม
+                if ($status[0] == 6) {
+                    $booking->update(['status_id' => 2]);
+                }
+                if ($status[0] == 7) {
+                    $booking_return = Booking_Item::where("booking_id", "=", $booking['id'])->get();
+                    foreach ($booking_return as $value) {
+                        $item_data = Item::find($value['item_id']);
+                        $amount = $item_data['amount'] - $value['amount'];
+                        if ($amount < 0) {
+                            DatabaseLog::log($request, 'not enough item');
+                            return $this->bookingResponse(202, 'not enough item', 'booking_item', '', Response::HTTP_NOT_FOUND);
+                        }
+                        $item_data->update(['amount' => $amount]);
+                    }
+                }
+                if ($status[0] == 8) {
+                    return $this->bookingResponse(777, '', '', 8, Response::HTTP_CREATED);
+                }
+            } else {
+                $booking->update(['status_id' => 4]);
+            }
 
             DatabaseLog::log($request, 'successfully');
             return $this->bookingResponse(101, 'successfully', 'booking_item', $response, Response::HTTP_CREATED);
@@ -433,3 +490,55 @@ class BookingController extends Controller
         }
     }
 }
+
+//เช็คหาสถานพทั้งหมดว่าเหมือนกันไหม
+// foreach ($status as $value) {
+//     if ($status[0] != $value) {
+//         $isStatus = false;
+//         break;
+//     }
+//     $isStatus = true;
+// }
+
+// if ($isStatus) {
+//     if ($status[0] == 5) {
+//         $booking->update(['status_id' => 4]);
+//     }
+//     if ($status[0] == 6) {
+//         $booking->update(['status_id' => 2]);
+//     }
+//     if ($status[0] == 7) {
+//         $booking_return = Booking_Item::where("booking_id", "=", $booking['id'])->get();
+//         foreach ($booking_return as $value) {
+//             $item_data = Item::find($value['item_id']);
+//             $amount = $item_data['amount'] - $value['amount'];
+//             if ($amount < 0) {
+//                 DatabaseLog::log($request, 'not enough item');
+//                 return $this->bookingResponse(202, 'not enough item', 'booking_item', '', Response::HTTP_NOT_FOUND);
+//             }
+//             $item_data->update(['amount' => $amount]);
+//         }
+
+//         foreach ($booking_return as $value) {
+//             $item_data = Item::find($value['item_id']);
+//             if ($item_data['is_not_return'] == 1) {
+//                 $value->update(['status_id' => 9, 'return_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
+//             }
+//         }
+//         $booking->update(['status_id' => 3, 'verify_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
+//     }
+//     if ($status[0] == 8) {
+//         $booking->update(['status_id' => 3]);
+//     }
+//     if ($status[0] == 9) {
+//         $booking->update(['status_id' => 4]);
+//         $booking_return = Booking_Item::where("booking_id", "=", $booking['id'])->get();
+//         foreach ($booking_return as $value) {
+//             $value->update(['return_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
+//         }
+//         foreach ($booking_return as $value) {
+//             $item_data = Item::find($value['item_id']);
+//             $item_data->update(['amount' => $item_data['amount'] + $value['amount']]);
+//         }
+//     }
+// }

@@ -315,35 +315,30 @@ class BookingController extends Controller
                 if ($booking['status_id'] == 2) {
                     DatabaseLog::log($request, 'can not edit, you are already confirm booking');
                     return $this->bookingResponse(214, 'can not edit, you are already confirm booking', 'booking', '', Response::HTTP_NOT_FOUND);
-                }
-                if ($booking['status_id'] == 3) {
+                } elseif ($booking['status_id'] == 3) {
                     DatabaseLog::log($request, 'can not edit, booking is approve');
                     return $this->bookingResponse(215, 'can not edit, booking is approve', 'booking', '', Response::HTTP_NOT_FOUND);
-                }
-                if ($booking['status_id'] == 4) {
+                } elseif ($booking['status_id'] == 4) {
                     DatabaseLog::log($request, 'can not edit,booking is completed');
                     return $this->bookingResponse(215, 'can not edit,booking is completed', 'booking', '', Response::HTTP_NOT_FOUND);
-                }
-                if (!$booking_item) {
+                } elseif (!$booking_item) {
                     DatabaseLog::log($request, 'not found');
                     return $this->bookingResponse(404, 'not found', 'booking_item', '', Response::HTTP_NOT_FOUND);
-                }
-                if ($booking['users_id'] != Auth::user()->id) {
+                } elseif ($booking['users_id'] != Auth::user()->id) {
                     DatabaseLog::log($request, 'you are not owner');
                     return $this->bookingResponse(207, 'you are not owner', 'booking', '', Response::HTTP_NOT_FOUND);
+                } elseif ($value['amount'] < 1) {
+                    $booking_item->delete();
+                    DatabaseLog::log($request, 'successfully');
+                    return $this->bookingResponse(101, 'successfully', 'booking_item', [], Response::HTTP_CREATED);
+                } else {
+                    $booking_item->update([
+                        'note_user' => $value['note_user'],
+                        'amount' => $value['amount'],
+                    ]);
+
+                    array_push($response, $booking_item);
                 }
-                if ($booking_item['amount'] < 1) {
-                    DatabaseLog::log($request, "you don't fill amount");
-                    return $this->bookingResponse(208, "you don't fill amount", 'booking_item', '', Response::HTTP_NOT_FOUND);
-                }
-
-
-                $booking_item->update([
-                    'note_user' => $value['note_user'],
-                    'amount' => $value['amount'],
-                ]);
-
-                array_push($response, $booking_item);
             }
 
             DatabaseLog::log($request, 'successfully');
@@ -436,7 +431,7 @@ class BookingController extends Controller
 
                 $item_data_is_not_return = Item::find($booking_item['item_id']);
                 //ถ้าของไม่ต้องคืนจะสถานะ 9 ทันที
-                if ($item_data_is_not_return['is_not_return'] == 1) {
+                if ($item_data_is_not_return['is_not_return'] == 1 && $booking_item['status_id'] != 5) {
                     $booking_item->update(['status_id' => 9, 'return_date' => Carbon::now()->setTimezone('Asia/Bangkok')]);
                 }
                 array_push($response, $booking_item);

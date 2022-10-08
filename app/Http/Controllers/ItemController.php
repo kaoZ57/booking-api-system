@@ -17,6 +17,9 @@ use App\Models\Tag_Item;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\FilterController;
+use PhpParser\Node\Stmt\Foreach_;
+use App\Models\DatabaseLog;
 
 class ItemController extends Controller
 {
@@ -29,9 +32,12 @@ class ItemController extends Controller
                 'item' => 'required'
             ]);
 
-            foreach ($request->item['tag'] as  $value) {
-                if (!Tag::find($value['id'])) {
-                    return $this->bookingResponse(404, 'ไม่มีแทค', 'item', '', Response::HTTP_CREATED); //แก้
+            if ($request->item['tag']) {
+                foreach ($request->item['tag'] as  $value) {
+                    if (!Tag::find($value['id'])) {
+                        DatabaseLog::log($request, 'not found');
+                        return $this->bookingResponse(404, 'not found', 'item', '', Response::HTTP_CREATED);
+                    }
                 }
             }
 
@@ -74,50 +80,23 @@ class ItemController extends Controller
                 'tag' =>  $item_tag,
             ];
 
-            return $this->bookingResponse(201, 'successfully', 'item', $result, Response::HTTP_CREATED);
+            DatabaseLog::log($request, 'successfully');
+            return $this->bookingResponse(101, 'successfully', 'item', $result, Response::HTTP_CREATED);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'item', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical(': ' . $exception->getTraceAsString());
+            DatabaseLog::log($request, (string) $exception->getMessage());
             return $this->bookingResponse(500, (string) $exception->getMessage(), 'item', '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function show(Request $request): JsonResponse
     {
         try {
-            // if ($request->filter) {
-            //     if ($request->filter['item_id']) {
-            //         $items = DB::table('item')
-            //             ->where("id", "=", $request->filter['item_id'])
-            //             ->get();
-            //         return $this->bookingResponse(201, 'successful', 'item', $items, Response::HTTP_OK);
-            //     }
-            // }
-            // if ($request->filter['tag_id']) {
-            //     $items = DB::table('item')->where("id", "=", $request->filter['tag_id'])->get();
-            //     return $this->bookingResponse(201, 'successful', 'item', $items, Response::HTTP_OK);
-            // }
-            // $items = DB::table('item')
-            //     ->join('tag_item', 'item.id', '=', 'tag_item.item_id')
-            //     ->join('tag', 'tag.id', '=', 'tag_item.tag_id')
-            //     ->select('item.*', 'tag.name as tag_name')
-            //     ->get();
-
-            // return $this->bookingResponse(201, 'successful', 'item', $request->filter->has('item_id'), Response::HTTP_OK);
-            $items = Item::where('created_at', '<', Carbon::now()->setTimezone('Asia/Bangkok'));
             $response = array();
 
-            // if ($request->filter->has('item_id')) {
-            //     $items->where('id', "=", $request->item_id);
-            // }
-            // if ($request->filter->has('tag_id')) {
-            //     $items->where('id', "=", $request->tag_id)->join('tag_item', $request->tag_id, '=', 'tag_item.tag_id');
-            // }
-            // if ($request->filter->has('name')) {
-            //     $items->where('name', "like", "%{$request->name}%");
-            // }
-
-            foreach ($items->get() as $value) {
+            foreach (FilterController::item_filter($request) as $value) {
                 $tag_Item = Tag_Item::where("item_id", "=", $value["id"])->get();
                 $tag_data = array();
                 foreach ($tag_Item as  $value1) {
@@ -141,11 +120,15 @@ class ItemController extends Controller
 
                 array_push($response, $itemdata);
             }
-            return $this->bookingResponse(201, 'successful', 'item', $response, Response::HTTP_OK);
+
+            DatabaseLog::log($request, 'successfully');
+            return $this->bookingResponse(101, 'successfully', 'item', $response, Response::HTTP_OK);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'item', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical(': ' . $exception->getTraceAsString());
+            DatabaseLog::log($request, (string) $exception->getMessage());
             return $this->bookingResponse(500, (string) $exception->getMessage(), 'item', '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -159,7 +142,33 @@ class ItemController extends Controller
 
             $item = Item::find($request->item['id']);
             if (!$item) {
-                return $this->bookingResponse(404, 'ไม่มีของ', 'item', '',  Response::HTTP_NOT_FOUND); //แก้
+                DatabaseLog::log($request, 'not found');
+                return $this->bookingResponse(404, 'not found', 'item', '',  Response::HTTP_NOT_FOUND);
+            }
+
+            foreach ($request->item['tag'] as $value) {
+                $tag = Tag::find($value['id']);
+                if (!$tag) {
+                    DatabaseLog::log($request, 'not found');
+                    return $this->bookingResponse(404, 'not found', 'item', '',  Response::HTTP_NOT_FOUND);
+                }
+            }
+
+            foreach (Tag_Item::where('item_id', '=', $request->item['id'])->get() as $value) {
+                $value->delete();
+            }
+
+
+            foreach ($request->item['tag'] as $value) {
+                $tag_item = Tag_Item::where('item_id', '=', $request->item['id'])->where('tag_id', '=', $value['id'])->first();
+                if ($tag_item) {
+                    continue;
+                } else {
+                    $tag = Tag_Item::Create([
+                        'item_id' => $item['id'],
+                        'tag_id' => $value['id'],
+                    ]);
+                }
             }
 
             $item->update([
@@ -168,12 +177,32 @@ class ItemController extends Controller
                 'is_active' => $request->item['is_active'],
                 'is_not_return' => $request->item['is_not_return']
             ]);
-            return $this->bookingResponse(201, 'successful', 'item', $item, Response::HTTP_OK);
+
+            $item_tag = Tag_Item::where('item_id', '=', $request->item['id'])->get();
+
+            $result = [
+                'id' => $item['id'],
+                'name' => $item['name'],
+                'description' => $item['description'],
+                'store_id' => $item['store_id'],
+                'amount' => $item['amount'],
+                'is_active' => $item['is_active'],
+                'is_not_return' => $item['is_not_return'],
+                'updated_by' => $item['updated_by'],
+                'amount_update_at' => $item['amount_update_at'],
+                'updated_by_name' => User::find($item['updated_by'])->name,
+                'tag' =>  $item_tag,
+            ];
+
+            DatabaseLog::log($request, 'successfully');
+            return $this->bookingResponse(101, 'successfully', 'item', $result, Response::HTTP_OK);
         } catch (QueryException $exception) {
-            return $this->commonResponse(500, (string) $exception->errorInfo[2], 'item', '', Response::HTTP_UNPROCESSABLE_ENTITY);
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
+            return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'item', '', Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical(': ' . $exception->getTraceAsString());
-            return $this->commonResponse(500, (string) $exception->getMessage(), 'item', '', Response::HTTP_INTERNAL_SERVER_ERROR);
+            DatabaseLog::log($request, (string) $exception->getMessage());
+            return $this->bookingResponse(500, (string) $exception->getMessage(), 'item', '', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

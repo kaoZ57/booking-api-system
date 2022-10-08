@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CentralController;
-use App\Http\Controllers\ViewController;
+use App\Http\Controllers\Graph\GraphController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,18 +15,20 @@ use App\Http\Controllers\ViewController;
 |
 */
 
-Route::view('/', 'welcome')->name('welcome');
+Route::get('/', function () {
+    return view('welcome');
+});
 
-Route::get('/home', function () {
-    $response = "";
-    return view('home', compact('response'));
-})->name('home');
-Route::post('/signin', [CentralController::class, 'signin'])->name('sign.in');
+// Route::get('/dashboard', function () {
+//     return view('dashboard');
+// })->middleware(['auth'])->name('dashboard');
 
-// Route::get('/login', [ViewController::class, 'login_view'])->name('login');
-// Route::get('/register', [ViewController::class, 'register_view'])->name('register');
-// Route::post('/loginPOST', [ViewController::class, 'login'])->name('login.post');
-// Route::post('/registerPOST', [ViewController::class, 'register'])->name('register.post');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', [CentralController::class, 'dashboard'])->name('dashboard');
+    Route::get('/admin_dashboard', [CentralController::class, 'admin_dashboard'])->name('admin_dashboard');
+    Route::post('/signin', [CentralController::class, 'signin'])->name('sign.in');
+});
 
-// Route::middleware(['auth:sanctum'])->group(function () {
-// });
+Route::get('larachart', [GraphController::class, 'lineChart2']);
+
+require __DIR__ . '/auth.php';

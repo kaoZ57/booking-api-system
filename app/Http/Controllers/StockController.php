@@ -13,6 +13,7 @@ use Illuminate\Database\QueryException;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Log;
+use App\Models\DatabaseLog;
 
 class StockController extends Controller
 {
@@ -24,7 +25,8 @@ class StockController extends Controller
             ]);
             $item = Item::find($request->stock['item_id']);
             if (!$item) {
-                return $this->bookingResponse(404, 'ไม่เจอ', 'stock', '',  Response::HTTP_NOT_FOUND); //แก้
+                DatabaseLog::log($request, 'not found');
+                return $this->bookingResponse(404, 'not found', 'stock', '',  Response::HTTP_NOT_FOUND);
             }
 
             $stock = Stock::create([
@@ -37,11 +39,30 @@ class StockController extends Controller
                 'amount_update_at' => Carbon::now()->setTimezone('Asia/Bangkok')->toDateTimeString(),
             ]);
 
-            return $this->bookingResponse(201, 'Stock Created successfully', 'stock', $stock,  Response::HTTP_CREATED);
+            DatabaseLog::log($request, 'successfully');
+            return $this->bookingResponse(101, 'successfully', 'stock', $stock,  Response::HTTP_CREATED);
         } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
             return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'stock', '',  Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (Exception $exception) {
             Log::critical(': ' . $exception->getTraceAsString());
+            DatabaseLog::log($request, (string) $exception->getMessage());
+            return $this->bookingResponse(500, (string) $exception->getMessage(), 'stock', '',  Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function show(Request $request): JsonResponse
+    {
+        try {
+
+            DatabaseLog::log($request, 'successfully');
+            return $this->bookingResponse(101, 'successfully', 'stock', FilterController::stock_filter($request),  Response::HTTP_CREATED);
+        } catch (QueryException $exception) {
+            DatabaseLog::log($request, (string) $exception->errorInfo[2]);
+            return $this->bookingResponse(500, (string) $exception->errorInfo[2], 'stock', '',  Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (Exception $exception) {
+            Log::critical(': ' . $exception->getTraceAsString());
+            DatabaseLog::log($request, (string) $exception->getMessage());
             return $this->bookingResponse(500, (string) $exception->getMessage(), 'stock', '',  Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

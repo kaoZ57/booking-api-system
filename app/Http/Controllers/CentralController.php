@@ -4,44 +4,46 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Central;
+use App\Models\DatabaseLog;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Khill\Lavacharts\Lavacharts;
+use App\Http\Controllers\Graph\GraphController;
+use Illuminate\Support\Facades\Redirect;
 
 class CentralController extends Controller
 {
-  public function store(Request $request)
-  {
+  // public function store(Request $request)
+  // {
 
-    try {
-      if (!Central::where('name', '=', $request['name'])->first()) {
-        $migration = $this->migration($request->name);
-        if ($migration) {
-          return  $migration;
-        }
-        return response()->json([
-          'message' => 'ไม่สำเร็จ'
-        ]); //แก้
-      }
-      return  response()->json([
-        'message' => 'มีแล้ว'
-      ]); //แก้
-    } catch (\Throwable $th) {
-      return  $th;
-    }
-  }
+  //   try {
+  //     if (!Central::where('name', '=', $request['name'])->first()) {
+  //       $migration = $this->migration($request->name);
+  //       if ($migration) {
+  //         return  $migration;
+  //       }
+  //       return response()->json([
+  //         'message' => 'ไม่สำเร็จ'
+  //       ]); //แก้
+  //     }
+  //     return  response()->json([
+  //       'message' => 'มีแล้ว'
+  //     ]); //แก้
+  //   } catch (\Throwable $th) {
+  //     return  $th;
+  //   }
+  // }
 
   public function show(Request $request)
   {
     try {
-      // change apikey
-      // $central = Central::Where('id', '=', 33)->first();
-      // $central->update([
-      //   'api_key' => hash('crc32c', $plainTextToken = Str::random(39)),
-      // ]);
-      // return $plainTextToken;
       $central = Central::all();
-      $mycentral = Central::Where('api_key', '=', hash('crc32c', $request->header('api_key')))->first();
+      $hashed_password = str_replace(' ', '', strtolower(crypt(crypt(Auth::user()->id, 'CS#13'), 'BooKinGAIpSYsIlovEPhaYUT') . crypt('API' . Auth::user()->id . 'KEY' . Auth::user()->id, 'I LoVe Xkalux') . '|table'));
+      $mycentral = Central::Where('api_key', '=', $hashed_password)->first();
       // $mycentral = Central::where("api_key", "=", str_replace(' ', '', strtolower(crypt(crypt(Auth::user()->id, 'CS#13'), 'BooKinGAIpSYsIlovEPhaYUT') . crypt('API' . Auth::user()->id . 'KEY' . Auth::user()->id, 'I LoVe Xkalux') . '|table')))->first();
       $centralJson = array();
 
@@ -56,13 +58,13 @@ class CentralController extends Controller
       // $centralJson = response()->json([
 
       if (!$central || !$mycentral) {
-        return 'ไม่มี'; //แก้
+        return 'not found';
       }
       $response = response()->json([
         'response' => [
           'code' => [
-            'key' => 201,
-            'message' => 'ok', //แก้
+            'key' => 200,
+            'message' => 'ok',
           ],
           'my_central' => $mycentral->name,
           'central' => $centralJson
@@ -71,44 +73,71 @@ class CentralController extends Controller
       ], Response::HTTP_OK);
 
       return $response;
-      // return ['database' => DB::getDatabaseName(), 'user' => $user];
-      // $bcrypt = hash('crc32c', $plainTextToken = Str::random(39));
-      // $key = hash('crc32c', $plainTextToken);
-      // return ['$bcrypt' => $bcrypt, '$plainTextToken' => $plainTextToken, '$key' => $key];
     } catch (\Throwable $th) {
       return  $th;
     }
   }
   public function signin(Request $request)
   {
-    // $response = json_decode($this->store($request)->getContent(), true);
-    // return redirect()->route('home')->with('response', $response);
-    // $response = response()->json([
-    //   'id' => 1,
-    //   'name' => 'kao'
-    // ], 200);
-
-    // dd($response);
-    // dd($response);
-    // dd($request['name']);
     $request->validate([
-      "name" =>  'required'
+      "name" => 'required'
     ]);
-    if (!$request) {
-      $response = "ไม่มีข้อมูล";
-      return view('home', compact('response'));
+
+    $hashed_password = str_replace(' ', '', strtolower(crypt(crypt(Auth::user()->id, 'CS#13'), 'BooKinGAIpSYsIlovEPhaYUT') . crypt('API' . Auth::user()->id . 'KEY' . Auth::user()->id, 'I LoVe Xkalux') . '|table'));
+    if (!Central::where('api_key', '=', $hashed_password)->first()) {
+
+      $migration = $this->migration($request->name);
+
+      $migration->getContent();
+
+      return redirect('/dashboard');
     }
-    $response = json_decode($this->migration($request->name)->getContent());
-    $response = $response->api_key;
-    return view('home', compact('response'));
   }
-  public function test()
+
+  public function dashboard()
   {
-    $response = response()->json([
-      'id' => 1,
-      'name' => 'kao'
-    ]);
-    $json_decode = json_decode($response->getContent(), true);
-    return $json_decode['name'];
+
+    $response = Central::where("user_id", "=", Auth::user()->id)->first();
+    if (!$response) {
+      return view('dashboard', compact('response'));
+    }
+    $response = $response->api_key;
+
+    DB::connection('mysql');
+    config(['database.connections.mysql.database' => $response]);
+    DB::purge('mysql');
+    DB::reconnect('mysql');
+
+    // $log =  DB::table('database_log')->orderBy('event_time', 'DESC')->get();
+    $log =  DB::table('database_log')
+      ->join('users', 'users.id', '=', 'database_log.user_id')
+      ->orderBy('event_time', 'DESC')
+      ->select('database_log.*', 'users.name')
+      ->get();
+
+    // temperatures
+    $lava = GraphController::temperatures();
+
+    //population
+    $lava1 = GraphController::population();
+
+    //rendering
+    // $lava2 = GraphController::rendering();
+
+    // $lava = GraphController::all();
+
+    return view('dashboard', compact('response', 'log', 'lava', 'lava1'));
+  }
+
+  public function admin_dashboard(Request $request)
+  {
+    if (Auth::user()->id != 11) {
+      CentralController::dashboard();
+    } else {
+      $response = Central::join('users', 'users.id', '=', 'central.user_id')
+        ->select('central.created_at as created_at', 'central.updated_at   as updated_at', 'users.name')
+        ->get();
+      return view('admindashboard', compact('response'));
+    }
   }
 }

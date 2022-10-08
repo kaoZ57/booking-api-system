@@ -25,16 +25,11 @@ use App\Http\Controllers\FilterController;
 */
 
 
-Route::group(['prefix' => 'central'], function () {
-    Route::post('/create', [CentralController::class, 'store']);
-    Route::get('/', [CentralController::class, 'show']);
-    Route::post('/test', [CentralController::class, 'test']);
-});
+
+Route::post('central/test', [CentralController::class, 'test']);
+
 
 Route::group(['middleware' => ['manage']], function () {
-    Route::get('/search_item', [FilterController::class, 'item_filter']);
-    Route::get('/search_booking', [FilterController::class, 'booking_filter']);
-    Route::get('/search_date', [FilterController::class, 'scopeStartsBefore']);
     //user authentication
     Route::group(['prefix' => 'auth'], function () {
         Route::post('/register', [AuthController::class, 'register']);
@@ -66,7 +61,11 @@ Route::group(['middleware' => ['manage']], function () {
                 Route::get('/get_all', [OutOfServiceController::class, 'show']);
                 Route::patch('/update', [OutOfServiceController::class, 'update']);
             });
-            Route::post('stock/add_item_to_stock', [StockController::class, 'store']);
+            Route::group(['prefix' => 'stock'], function () {
+                Route::post('add_item_to_stock', [StockController::class, 'store']);
+                Route::get('/get_all', [StockController::class, 'show']);
+            });
+
             Route::patch('booking/update_items_by_staff', [BookingController::class, 'update_items_by_staff']);
         });
 

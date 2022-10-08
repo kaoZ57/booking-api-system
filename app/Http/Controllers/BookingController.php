@@ -437,7 +437,11 @@ class BookingController extends Controller
                     }
                     foreach ($booking_return as $value) {
                         $item_data = Item::find($value['item_id']);
-                        $item_data->update(['amount' => $item_data['amount'] + $value['amount']]);
+                        if ($item_data['is_not_return'] == 1) {
+                            continue;
+                        } else {
+                            $item_data->update(['amount' => $item_data['amount'] + $value['amount']]);
+                        }
                     }
                 }
             }

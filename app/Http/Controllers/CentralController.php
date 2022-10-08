@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Khill\Lavacharts\Lavacharts;
+use App\Http\Controllers\Graph\GraphController;
+use Illuminate\Support\Facades\Redirect;
 
 class CentralController extends Controller
 {
@@ -91,7 +94,7 @@ class CentralController extends Controller
     }
   }
 
-  public function index()
+  public function dashboard()
   {
 
     $response = Central::where("user_id", "=", Auth::user()->id)->first();
@@ -105,56 +108,36 @@ class CentralController extends Controller
     DB::purge('mysql');
     DB::reconnect('mysql');
 
-    $log =  DB::table('database_log')->orderBy('event_time', 'DESC')->get();
-
-    return view('dashboard', compact('response', 'log'));
-  }
-
-  public function test(Request $request)
-  {
-    $api_key = strtolower($request->header('api_key'));
-
-    $data = DB::table('information_schema.TABLES')
-      ->where('table_schema', '=',  $api_key)
-      ->select('table_schema AS Database', 'data_length AS data_length', 'index_length AS index_length')
+    // $log =  DB::table('database_log')->orderBy('event_time', 'DESC')->get();
+    $log =  DB::table('database_log')
+      ->join('users', 'users.id', '=', 'database_log.user_id')
+      ->orderBy('event_time', 'DESC')
+      ->select('database_log.*', 'users.name')
       ->get();
 
-    $data_length = 0;
-    $index_length = 0;
-    foreach ($data as $value) {
-      $data_length += $value->data_length;
+    // temperatures
+    $lava = GraphController::temperatures();
+
+    //population
+    $lava1 = GraphController::population();
+
+    //rendering
+    // $lava2 = GraphController::rendering();
+
+    // $lava = GraphController::all();
+
+    return view('dashboard', compact('response', 'log', 'lava', 'lava1'));
+  }
+
+  public function admin_dashboard(Request $request)
+  {
+    if (Auth::user()->id != 11) {
+      CentralController::dashboard();
+    } else {
+      $response = Central::join('users', 'users.id', '=', 'central.user_id')
+        ->select('central.created_at as created_at', 'central.updated_at   as updated_at', 'users.name')
+        ->get();
+      return view('admindashboard', compact('response'));
     }
-    foreach ($data as $value) {
-      $index_length += $value->index_length;
-    }
-    $size = round(($data_length + $index_length) / 1024 / 1024, 2);
-    return $size;
-
-    // DB::connection('mysql');
-    // config(['database.connections.mysql.database' => $request->header('api_key')]);
-    // DB::purge('mysql');
-    // DB::reconnect('mysql');
-    // return DatabaseLog::all();
-    $response = ([
-      "event_time" => Carbon::now()->setTimezone('Asia/Bangkok'),
-      "user_id" => 1,
-      "method" => $request->method(),
-      "fullUrl" => $request->fullUrl(),
-      "ipAddress" => $request->ip(),
-      "request" => $request->collect(),
-      "message" => "successfully",
-
-      // "collect" => $request->collect()
-    ]);
-
-    return $response;
-    // return hash_algos();
-    // return hash('sha256', '2022-02-3');
-    // return password_hash("rasmuslerdorf", PASSWORD_BCRYPT, ['memory_cost' => 2048, 'time_cost' => 4, 'threads' => 3]);
-    // return password_hash('kao', PASSWORD_ARGON2ID);
-    // return substr(password_hash('kao', PASSWORD_ARGON2ID), 33);
-
-
-    // return count($log);
   }
 }

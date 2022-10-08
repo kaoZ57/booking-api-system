@@ -48,9 +48,14 @@ class AuthController extends Controller
                 'password_confirmation' => 'required'
             ]);
             // $validator = Validator::make($request->all(), $request->rules(), $request->messages());
-            $newUser = User::create(
-                array_merge($request->validated(), ['password' => Hash::make($request->password)])
-            );
+            // $newUser = User::create(
+            //     array_merge($request->validated(), ['password' => Hash::make($request->password)])
+            // );
+            $newUser = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password)
+            ]);
             if (!$newUser) {
                 DatabaseLog::log_NoUser($request, 'failed');
                 return $this->authResponse(301, 'failed', Response::HTTP_UNPROCESSABLE_ENTITY);

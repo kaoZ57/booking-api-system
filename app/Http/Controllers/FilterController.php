@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Status;
 use App\Models\Tag;
 use App\Models\Out_of_service;
+use App\Models\Stock;
 
 use App\Models\Booking;
 use Illuminate\Http\Request;
@@ -172,10 +173,10 @@ class FilterController extends Controller
             $bookings->where('users_id', "=", $request->filter['users_id']);
         }
         if ($request->has('filter.start_date')) {
-            $bookings->where('start_date', "=", $request->filter['start_date']);
+            $bookings->whereDate('start_date', "=", $request->filter['start_date']);
         }
         if ($request->has('filter.end_date')) {
-            $bookings->where('end_date', "=", $request->filter['end_date']);
+            $bookings->whereDate('end_date', "=", $request->filter['end_date']);
         }
         if ($request->has('filter.verify_date')) {
             $bookings->where('verify_date', "=", $request->filter['verify_date']);
@@ -210,17 +211,42 @@ class FilterController extends Controller
         return  $bookings->get();
     }
 
-    public function scopeStartsBetween()
-
+    public static function stock_filter(Request $request)
     {
-        $booking = QueryBuilder::for(Booking::class)
-            ->allowedFilters([
-                AllowedFilter::scope('starts_between'),
-            ])
-            ->select('booking.*')
-            ->get();
+        $stocks = Stock::where('created_at', '<', Carbon::now()->setTimezone('Asia/Bangkok'));
 
+        if ($request->has('filter.stock_id')) {
+            $stocks->where('id', "=", $request->filter['stock_id']);
+        }
+        if ($request->has('filter.start_date')) {
+            $stocks->whereDate('updated_at', "=", $request->filter['start_date']);
+        }
+        if ($request->has('filter.between')) {
+            $start_date =  substr($request->filter['between'], 10);
+            $end_date =  substr($request->filter['between'], -10);
+            $stocks->whereDate('updated_at', '>=', $start_date)->whereDate('updated_at', '<=', $end_date);
+        }
+        if ($request->has('filter.limit')) {
+            $stocks->limit($request->filter['limit']);
+        }
+        if ($request->has('filter.orderBy')) {
+            $stocks->orderBy('id', $request->filter['orderBy']);
+        }
 
-        return $booking;
+        return  $stocks->get();
     }
+
+    // public function scopeStartsBetween()
+
+    // {
+    //     $booking = QueryBuilder::for(Booking::class)
+    //         ->allowedFilters([
+    //             AllowedFilter::scope('starts_between'),
+    //         ])
+    //         ->select('booking.*')
+    //         ->get();
+
+
+    //     return $booking;
+    // }
 }

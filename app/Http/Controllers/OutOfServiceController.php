@@ -40,7 +40,7 @@ class OutOfServiceController extends Controller
                 'item_id' => $request->out_of_service['item_id'],
                 'note' => $request->out_of_service['note'],
                 'amount' => $request->out_of_service['amount'],
-                'ready_to_use' => $request->out_of_service['ready_to_use'],
+                'ready_to_use' => 0,
                 'updated_by' => Auth::user()->id,
             ]);
 
@@ -89,6 +89,11 @@ class OutOfServiceController extends Controller
                 DatabaseLog::log($request, 'not found');
                 return $this->bookingResponse(404, 'not found', 'out_of_service', '',  Response::HTTP_NOT_FOUND);
             }
+            if ($out_of_service['ready_to_use'] == 1) {
+                DatabaseLog::log($request, 'not found');
+                return $this->bookingResponse(404, 'not found', 'out_of_service', '',  Response::HTTP_NOT_FOUND);
+            }
+
             $item = Item::find($out_of_service['item_id']);
 
             if ($request->out_of_service['ready_to_use'] == 1) {

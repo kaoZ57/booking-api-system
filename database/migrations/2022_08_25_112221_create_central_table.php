@@ -15,13 +15,13 @@ class CreateCentralTable extends Migration
     {
         Schema::create('central', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->nullable();
-            $table->string('api_key')->nullable();;
+            $table->bigInteger('user_id')->nullable();
+            $table->string('api_key')->nullable();
             $table->timestamps();
         });
     }
 
-    /**
+    /**`
      * Reverse the migrations.
      *
      * @return void

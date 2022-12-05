@@ -112,8 +112,12 @@ class CentralController extends Controller
     $log =  DB::table('database_log')
       ->join('users', 'users.id', '=', 'database_log.user_id')
       ->orderBy('event_time', 'DESC')
+      ->limit(100)
       ->select('database_log.*', 'users.name')
       ->get();
+
+    $logCount =  DB::table('database_log')->count('*');
+    // dd($logCount);
 
     // temperatures
     $lava = GraphController::temperatures();
@@ -126,7 +130,7 @@ class CentralController extends Controller
 
     // $lava = GraphController::all();
 
-    return view('dashboard', compact('response', 'log', 'lava', 'lava1'));
+    return view('dashboard', compact('response', 'log', 'lava', 'lava1', 'logCount'));
   }
 
   public function admin_dashboard(Request $request)
@@ -134,10 +138,42 @@ class CentralController extends Controller
     if (Auth::user()->id != 11) {
       CentralController::dashboard();
     } else {
-      $response = Central::join('users', 'users.id', '=', 'central.user_id')
-        ->select('central.created_at as created_at', 'central.updated_at   as updated_at', 'users.name')
+      $central = Central::join('users', 'users.id', '=', 'central.user_id')
+        ->select('central.*', 'users.name')
         ->get();
-      return view('admindashboard', compact('response'));
+
+      // $data = DB::table('information_schema.TABLES')
+      //   ->select('table_schema', DB::raw('ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size'))
+      //   ->where('table_schema', 'LIKE', '$2y$10$%')
+      //   ->groupBy('table_schema')
+      //   ->get();
+      // dd($data);
+      // $size = array();
+      // foreach ($central as $key => $value) {
+      //   config(['database.connections.mysql.database' => $value['api_key']]);
+      //   DB::purge('mysql');
+      //   $data = DB::table('database_log')->select('event_time', 'size_MB')->orderBy('event_time', 'DESC')->limit(1)->get();
+      //   array_push($size, $data);
+      // }
+      // config(['database.connections.mysql.database' => 'central-v1']);
+      // DB::purge('mysql');
+
+      // dd($central->name);
+      // dd($size);
+      // foreach ($size as $key => $value) {
+      //   dd($value);
+      // }
+
+      // $result = array_merge($central->toArray(), $size);
+      // dd($result);
+
+      return view('admindashboard', compact('central'));
     }
+  }
+  public function test()
+  {
+    $salt = 'Rajamangala University of Technology IsanRajamangala University of Technology Isan CS#13 Booking API System';
+
+    return hash('sha256', $salt . '2022-09-04 14:48:38');
   }
 }

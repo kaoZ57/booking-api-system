@@ -419,7 +419,11 @@ class UserController extends Controller
     public function show_current(Request $request)
     {
         try {
-            $user = User::with('customers', 'roles')->find(Auth::user()->id);
+            if ($request->has('filter.user_id')) {
+                $user = User::with('customers', 'roles')->find($request->filter['user_id']);
+            } else {
+                $user = User::with('customers', 'roles')->find(Auth::user()->id);
+            }
             if (!$user) {
                 DatabaseLog::log($request, 'not found');
                 return $this->authResponse(404, 'not found', Response::HTTP_NOT_FOUND);
